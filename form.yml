@@ -1,0 +1,87 @@
+# Batch Connect app configuration file
+#
+# @note Used to define the submitted cluster, title, description, and
+#   hard-coded/user-defined attributes that make up this Batch Connect app.
+---
+
+# **MUST** set cluster id here that matches cluster configuration file located
+# under /etc/ood/config/clusters.d/*.yml
+# @example Use the Owens cluster at Ohio Supercomputer Center
+#     cluster: "owens"
+cluster: "winter2"
+
+# Define attribute values that aren't meant to be modified by the user within
+# the Dashboard form
+attributes:
+  # Set the corresponding modules that need to be loaded for Jupyter to run
+  #
+  # @note It is called within the batch job as `module load <modules>` if
+  #   defined
+  # @example Do not load any modules
+  #     modules: ""
+  # @example Using default python module
+  #     modules: "python"
+  # @example Using specific python module
+  #     modules: "python/3.5"
+  # @example Using combination of modules
+  #     modules: "python/3.5 cuda/8.0.44"
+  modules: "apptainer"
+  partition:
+    label: "Partition"
+    widget: select
+    options:
+      - ['compute']
+  custom_qos:
+    label: "QOS"
+    widget: select
+    options:
+      - ['batch', data-exclusive-option-for-queue-compute: true]
+      # - ['test', data-exclusive-option-for-queue-rit-test: true]
+    help: |
+      Currently, QuPath jobs are limited to the compute partition and batch QOS.
+  num_cores:
+    widget: "number_field"
+    label: "Number of cores"
+    value: 8
+    help: |
+      Currently, we limit the maximum number of cores for a QuPath jobs to 64.
+    min: 2
+    max: 64
+    step: 1
+  bc_num_hours:
+    label: "Number of hours"
+    value: 1
+    min: 1
+    max: 8
+    step: 1
+    help: "The interactive QuPath server is intended for a work day's amount of time."
+  memtask:
+    widget: select
+    label: "Memory (in GB)"
+    options:
+      - ["32GB"]
+      - ["48GB"]
+      - ["64GB"]
+      - ["96GB"]  
+
+  # Any extra command line arguments to feed to the `jupyter notebook ...`
+  # command that launches the Jupyter notebook within the batch job
+  #extra_jupyter_args: ""
+
+# All of the attributes that make up the Dashboard form (in respective order),
+# and made available to the submit configuration file and the template ERB
+# files
+#
+# @note You typically do not need to modify this unless you want to add a new
+#   configurable value
+# @note If an attribute listed below is hard-coded above in the `attributes`
+#   option, then it will not appear in the form page that the user sees in the
+#   Dashboard
+form:
+  - modules
+  - partition
+  - custom_qos
+  - num_cores
+  - memtask
+  - bc_num_hours
+  - bc_email_on_started
