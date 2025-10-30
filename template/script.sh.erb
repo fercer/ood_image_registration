@@ -21,21 +21,8 @@ module list
 <%- end -%>
 
 # Benchmark info
-echo "TIMING - Starting QuPath at: $(date)"
+echo "TIMING - Starting Image Registration at: $(date)"
 
-# Launch QuPath using xpra
+# Launch the Image Registration job
 set -x
-apptainer exec ${CONTAINER} xpra start \
-    --minimal=yes \
-    --bind-tcp=0.0.0.0:${PORT},auth=file,filename=${PASSWORD_FILE} \
-    --websocket-upgrade=yes \
-    --socket-dirs=${PWD} \
-    --opengl=yes \
-    --html=on \
-    --compression-level=1 \
-    --start="/QuPath/bin/QuPath -Dqupath.prefs.name=myPrefs" \
-    --exit-with-windows=yes \
-    --daemon=no \
-    --clipboard=yes \
-    --xvfb="/usr/bin/Xvfb +extension Composite -screen 0 1920x1080x24+32 -nolisten tcp -noreset -auth ${XAUTHORITY}" \
-    $DISPLAY
+apptainer exec ${CONTAINER} echo "<%= reference_image %> <%= input_image %>"

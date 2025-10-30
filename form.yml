@@ -62,7 +62,15 @@ attributes:
       - ["32GB"]
       - ["48GB"]
       - ["64GB"]
-      - ["96GB"]  
+      - ["96GB"]
+  reference_image:
+    widget: "path_selector"
+    show_hidden: false
+    show_files: true
+  input_image:
+    widget: "path_selector"
+    show_hidden: false
+    show_files: true
 
   # Any extra command line arguments to feed to the `jupyter notebook ...`
   # command that launches the Jupyter notebook within the batch job
@@ -85,3 +93,5 @@ form:
   - memtask
   - bc_num_hours
   - bc_email_on_started
+  - reference_image
+  - input_image
