@@ -22,11 +22,11 @@ echo "TIMING - Starting Image Registration at: $(date)"
 
 # Launch the Image Registration job
 
-TEMP_DIR="<%= temp_dir %>"
-PROCESSING_SIZE="<%= processing_size %>"
-CODEC="<%= output_codec %>"
-QUALITY="<%= output_codec_quality %>"
-OUTPUT_DIR="<%= output_dir %>"
+TEMP_DIR="<%= context.temp_dir %>"
+PROCESSING_SIZE="<%= context.processing_size %>"
+CODEC="<%= context.output_codec %>"
+QUALITY="<%= context.output_codec_quality %>"
+OUTPUT_DIR="<%= context.output_dir %>"
 
 if [ ! -d "$TEMP_DIR" ]; then
     mkdir -p "${TEMP_DIR}"
@@ -38,8 +38,8 @@ if [ ! -d "$TEMP_DIR" ]; then
     exit 1
 fi
 
-REFERENCE_FILENAME="<%= reference_image %>"
-REGISTERING_FILENAME="<%= input_image>"
+REFERENCE_FILENAME="<%= context.reference_image %>"
+REGISTERING_FILENAME="<%= context.input_image>"
 
 if [ ! -f "$REFERENCE_FILENAME" ]; then
     echo "Could not find reference image '${REFERENCE_FILENAME}'"
