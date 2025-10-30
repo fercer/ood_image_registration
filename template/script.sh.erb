@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# Benchmark info
-echo "TIMING - Starting main script at: $(date)"
-
 # Set working directory to home directory
 cd "${HOME}"
 
@@ -24,5 +21,135 @@ module list
 echo "TIMING - Starting Image Registration at: $(date)"
 
 # Launch the Image Registration job
-set -x
-apptainer exec ${CONTAINER} echo "<%= reference_image %> <%= input_image %>"
+
+TEMP_DIR="<%= temp_dir %>"
+PROCESSING_SIZE="<%= processing_size %>"
+CODEC="<%= output_codec %>"
+QUALITY="<%= output_codec_quality %>"
+OUTPUT_DIR="<%= output_dir %>"
+
+if [ ! -d "$TEMP_DIR" ]; then
+    mkdir -p "${TEMP_DIR}"
+fi
+
+# Check if the directory was created successfully or not
+if [ ! -d "$TEMP_DIR" ]; then
+    echo "Could not create temporary file at ${TEMP_DIR}"
+    exit 1
+fi
+
+REFERENCE_FILENAME="<%= reference_image %>"
+REGISTERING_FILENAME="<%= input_image>"
+
+if [ ! -f "$REFERENCE_FILENAME" ]; then
+    echo "Could not find reference image '${REFERENCE_FILENAME}'"
+    exit 1
+fi
+
+if [ ! -f "$REGISTERING_FILENAME" ]; then
+    echo "Could not find input image '${REGISTERING_FILENAME}'"
+    exit 1
+fi
+
+REFERENCE_BASENAME=$(basename "$REFERENCE_FILENAME")
+if [[ ${REFERENCE_BASENAME} != *".ome.tif"* ]]; then
+    REFERENCE_BASENAME="${REFERENCE_BASENAME%.*}"
+else
+    REFERENCE_BASENAME="${REFERENCE_BASENAME%.ome.tif*}"
+fi
+
+# ----------------- Registration pipeline ------------------------------------------------------------------------------------------
+
+# Use a writable file to store compatible bioformats
+BF_FORMAT_F=${TEMP_DIR}/.cache/bf_formats.txt
+if [ ! -f "$BF_FORMAT_F" ]; then
+    BF_FORMAT_DIR=$(dirname ${BF_FORMAT_F})
+    if [ ! -d $BF_FORMAT_DIR ]; then
+        mkdir -p $BF_FORMAT_DIR
+    fi
+
+    touch $BF_FORMAT_F
+fi
+
+# Determine the image preprocessor and reader required for the reference image
+REFERENCE_SHOWINF=$(singularity exec ${BFTOOLS_CONTAINER} /opt/bftools/showinf -no-upgrade -nopix ${REFERENCE_FILENAME})
+REFERENCE_SizeZ=($(echo "${REFERENCE_SHOWINF}" | grep "SizeZ" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
+REFERENCE_SizeC=($(echo "${REFERENCE_SHOWINF}" | grep "SizeC" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
+
+if [[ $REFERENCE_SizeC == 3 ]]; then
+    REFERENCE_PREPROCESSOR=":HEDeconvolution"
+else
+    REFERENCE_PREPROCESSOR=":ChannelGetter"
+fi
+
+if [[ $REFERENCE_SizeZ -gt 1 ]]; then
+    MID_Z=$((REFERENCE_SizeZ / 2))
+    REFERENCE_READER=":bioformats-Z:${MID_Z}"
+elif [[ $REFERENCE_FILENAME == *".ome.tif"* ]]; then
+    REFERENCE_READER=":bioformats"
+else
+    REFERENCE_READER=""
+fi
+
+REFERENCE_ARGS="${REFERENCE_FILENAME}${REFERENCE_PREPROCESSOR}${REFERENCE_READER}"
+
+# Determine the image preprocessor and reader required for each image according to the modality
+REG_SHOWINF=$(singularity exec ${BFTOOLS_CONTAINER} /opt/bftools/showinf -no-upgrade -nopix ${REGISTERING_FILENAME})
+REG_SizeZ=($(echo "${REG_SHOWINF}" | grep "SizeZ" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
+REG_SizeC=($(echo "${REG_SHOWINF}" | grep "SizeC" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
+
+if [[ $REG_SizeC == 3 ]]; then
+    REG_PREPROCESSOR=":HEDeconvolution"
+else
+    REG_PREPROCESSOR=":ChannelGetter"
+fi
+
+if [[ $REG_SizeZ -gt 1 ]]; then
+    MID_Z=$((REG_SizeZ / 2))
+    REG_READER=":bioformats-Z:${MID_Z}"
+elif [[ "$REFERENCE_FILENAME" == *".ome.tif"* ]]; then
+    REG_READER=":bioformats"
+else
+    REG_READER=""
+fi
+
+REG_ARGS="${REGISTERING_FILENAME}${REG_PREPROCESSOR}${REG_READER}"
+
+# Execute registration pipeline ----------------------------------------------------------------
+command="singularity run -B ${BF_FORMAT_F}:/root/.local/lib/python3.12/site-packages/valis/data/bf_formats.txt ${VALIS_CONTAINER}\
+ -s ${REFERENCE_BASENAME} -o ${TEMP_DIR} -d ${OUTPUT_DIR}\
+ -i ${REFERENCE_ARGS} ${REG_ARGS}\
+ -mp ${PROCESSING_SIZE}\
+ -c ${CODEC} -cq ${QUALITY}\
+ -y"
+
+echo "$command"
+echo "TIMING - Finished Image Registration at: $(date)"
+exit 0
+
+eval "$command"
+
+    # Change the name of the output registered files to associate them with the reference image
+REG_BASENAME=$(basename $REGISTERING_FILENAME)
+if [[ "${REGISTERING_FILENAME}" != *".ome.tif"* ]] ; then
+    REG_BASENAME=${REG_BASENAME%.*}
+else
+    REG_BASENAME=${REG_BASENAME%.ome.tif*}
+fi
+OUTPUT_REG_FILENAME="${OUTPUT_DIR}/${REG_BASENAME}.ome.tiff"
+
+OUTPUT_REG_BASENAME=$(basename $OUTPUT_REG_FILENAME)
+OUTPUT_REG_BASENAME=${OUTPUT_REG_BASENAME%.ome.tiff}
+OUTPUT_REG_NEW_FILENAME=${OUTPUT_REG_BASENAME}_to_${REFERENCE_BASENAME}
+
+SAME_NAME_COUNTER=1
+
+while [ -f "${OUTPUT_DIR}/${OUTPUT_REG_NEW_FILENAME}.ome.tiff" ]; do
+    OUTPUT_REG_NEW_FILENAME="${OUTPUT_REG_BASENAME}_to_${REFERENCE_BASENAME}_(${SAME_NAME_COUNTER})"
+    SAME_NAME_COUNTER=$((SAME_NAME_COUNTER + 1))
+done
+
+mv "${OUTPUT_DIR}/${OUTPUT_REG_BASENAME}.ome.tiff" "${OUTPUT_DIR}/${OUTPUT_REG_NEW_FILENAME}.ome.tiff"
+mv "${OUTPUT_DIR}/${OUTPUT_REG_BASENAME}_transformation_matrix.csv" "${OUTPUT_DIR}/${OUTPUT_REG_NEW_FILENAME}_transformation_matrix.csv"
+
+echo "TIMING - Finished Image Registration at: $(date)"

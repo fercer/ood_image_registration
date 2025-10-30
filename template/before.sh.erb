@@ -5,5 +5,7 @@
 # Export the module function if it exists
 [[ $(type -t module) == "function" ]] && export -f module
 
-# define container location
-export CONTAINER="${HOME}/bin/valis-wsi_1.2.0.sif"
+# define containers locations
+export VALIS_CONTAINER="${HOME}/bin/valis-wsi_1.2.0.sif"
+
+export BFTOOLS_CONTAINER="${HOME}/bin/bftools_latest.sif"

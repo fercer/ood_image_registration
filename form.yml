@@ -42,27 +42,27 @@ attributes:
   num_cores:
     widget: "number_field"
     label: "Number of cores"
-    value: 8
+    value: 16
     help: |
-      Currently, we limit the maximum number of cores for a QuPath jobs to 64.
-    min: 2
-    max: 64
+      The image registration process has been tested with 16 cores only.
+    min: 16
+    max: 16
     step: 1
   bc_num_hours:
     label: "Number of hours"
     value: 1
     min: 1
-    max: 8
+    max: 2
     step: 1
-    help: "The interactive QuPath server is intended for a work day's amount of time."
+    help: |
+      The image registration process usually takes one hour only; however, this depends on the size of the image.
   memtask:
     widget: select
     label: "Memory (in GB)"
     options:
-      - ["32GB"]
-      - ["48GB"]
-      - ["64GB"]
-      - ["96GB"]
+      - ["256GB"]
+    help: |
+      The image registration requires at least 256 GB.
   reference_image:
     widget: "path_selector"
     show_hidden: false
@@ -71,10 +71,48 @@ attributes:
     widget: "path_selector"
     show_hidden: false
     show_files: true
-
-  # Any extra command line arguments to feed to the `jupyter notebook ...`
-  # command that launches the Jupyter notebook within the batch job
-  #extra_jupyter_args: ""
+  output_dir:
+    widget: "path_selector"
+    show_hidden: false
+    show_files: false
+  temp_dir:
+    widget: "path_selector"
+    show_hidden: false
+    show_files: true
+  processing_size:
+    widget: select
+    label: "Processing size"
+    options:
+      - ["8196"]
+      - ["4096"]
+      - ["2048"]
+      - ["1024"]
+      - ["512"]
+    help: |
+      Size at which the registration process is applied. The image is resized to have its largest side equal to the selected processing size. Highest registration performance requires at least the 8196 size setting.
+  output_codec:
+    widget: select
+    label: Compression codec
+    options:
+      - ["jp2k"]
+      - ["jpeg"]
+      - ["zstd"]
+      - ["webp"]
+      - ["lzw"]
+      - ["ccittfax4"]
+      - ["packbits"]
+      - ["deflate"]
+      - ["none"]
+    help: |
+      Codec used to compress the output .tif image
+  output_codec_quality:
+    label: "Compression codec quality"
+    value: 100
+    min: 1
+    max: 100
+    step: 1
+    help: |
+      The quality to be preserver after compressing the image with the selected codec. For loss-less compression set it to 100.
 
 # All of the attributes that make up the Dashboard form (in respective order),
 # and made available to the submit configuration file and the template ERB
@@ -95,3 +133,8 @@ form:
   - bc_email_on_started
   - reference_image
   - input_image
+  - output_dir
+  - temp_dir
+  - processing_size
+  - output_codec
+  - output_codec_quality
