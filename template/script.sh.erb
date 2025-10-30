@@ -39,7 +39,7 @@ if [ ! -d "$TEMP_DIR" ]; then
 fi
 
 REFERENCE_FILENAME="<%= context.reference_image %>"
-REGISTERING_FILENAME="<%= context.input_image>"
+REGISTERING_FILENAME="<%= context.input_image %>"
 
 if [ ! -f "$REFERENCE_FILENAME" ]; then
     echo "Could not find reference image '${REFERENCE_FILENAME}'"
