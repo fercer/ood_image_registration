@@ -1,4 +1,4 @@
-# Batch Connect - Example using containerized Xpra app (QuPath)
+# Image Registration app
 
 This was created from the https://github.com/psobolewskiPhD/bc_example_qupath template.
 
