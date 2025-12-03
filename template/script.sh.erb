@@ -128,9 +128,6 @@ command="singularity run -B ${BF_FORMAT_F}:/root/.local/lib/python3.12/site-pack
  -y"
 
 echo "$command"
-echo "TIMING - Finished Image Registration at: $(date)"
-exit 0
-
 eval "$command"
 
 # Change the name of the output registered files to associate them with the reference image
