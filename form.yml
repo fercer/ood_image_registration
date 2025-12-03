@@ -45,9 +45,9 @@ attributes:
     value: 16
     help: |
       The image registration process has been tested with 16 cores only.
-    min: 16
+    min: 8
     max: 16
-    step: 1
+    step: 8
   bc_num_hours:
     label: "Number of hours"
     value: 1

@@ -28,6 +28,10 @@ CODEC="<%= context.output_codec %>"
 QUALITY="<%= context.output_codec_quality %>"
 OUTPUT_DIR="<%= context.output_dir %>"
 
+if [ ! -d "$OUTPUT_DIR" ]; then
+    mkdir -p "${OUTPUT_DIR}"
+fi
+
 if [ ! -d "$TEMP_DIR" ]; then
     mkdir -p "${TEMP_DIR}"
 fi
@@ -129,7 +133,7 @@ exit 0
 
 eval "$command"
 
-    # Change the name of the output registered files to associate them with the reference image
+# Change the name of the output registered files to associate them with the reference image
 REG_BASENAME=$(basename $REGISTERING_FILENAME)
 if [[ "${REGISTERING_FILENAME}" != *".ome.tif"* ]] ; then
     REG_BASENAME=${REG_BASENAME%.*}
