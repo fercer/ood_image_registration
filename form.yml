@@ -38,7 +38,7 @@ attributes:
       - ['batch', data-exclusive-option-for-queue-compute: true]
       # - ['test', data-exclusive-option-for-queue-rit-test: true]
     help: |
-      Currently, QuPath jobs are limited to the compute partition and batch QOS.
+      Currently, image registration jobs are limited to the compute partition and batch QOS.
   num_cores:
     widget: "number_field"
     label: "Number of cores"
