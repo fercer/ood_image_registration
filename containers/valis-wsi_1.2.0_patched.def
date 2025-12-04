@@ -19,8 +19,11 @@ from: cdgatenbee/valis-wsi:1.2.0
     /root/.local/bin/pip3 install /opt/valis
     /root/.local/bin/pip3 install itk-elastix
 
-    # Download the script used for registration through the python API
-    wget "https://gist.github.com/fercer/21913333808a2dad2e5e1644714a4a1e/raw/3c4a4e9b95ae9943d29e6e954afe76bc0bc8344d/valis_registration.py" -O /opt/valis_registration.py
+    # Clone this repository and get access to the VALIS registration script
+    cd /opt
+    git clone https://github.com/fercer/ood_image_registration
+    cp ood_image_registration/scripts/valis_registration.py /opt
+    rm -r ood_image_registration
 
 %runscript
     /root/.local/bin/python /opt/valis_registration.py $@
