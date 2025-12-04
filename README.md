@@ -2,9 +2,6 @@
 
 This was created from the https://github.com/psobolewskiPhD/bc_example_qupath template.
 
-So to implement an app, only [the container path](https://github.com/psobolewskiPhD/bc_example_qupath/blob/be88adf8636531c6078c783e7b55d85512c82830/template/before.sh.erb#L54) needs to be modified, as well as the [actual start executable](https://github.com/psobolewskiPhD/bc_example_qupath/blob/be88adf8636531c6078c783e7b55d85512c82830/template/script.sh.erb#L36). Beyond that, you can update the icon.png to for the app, as well as [view.html.erb](https://github.com/psobolewskiPhD/bc_example_qupath/blob/main/view.html.erb) which defines the connect button.
-In terms of the SLURM parameters and the submission form, a minimal set is already provided in [form.yml](https://github.com/psobolewskiPhD/bc_example_qupath/blob/main/form.yml), but you can edit that along side [submit.yml.erb](https://github.com/psobolewskiPhD/bc_example_qupath/blob/main/submit.yml.erb).
-
 ## Prerequisites
 
 This Batch Connect app requires the following software be installed on the
@@ -16,11 +13,9 @@ OnDemand node):
 
 ## Install
 
-Click the `Use this template` button and create a new repository from this template repository using the GitHub interface.
+Clone this repository to your sandbox environment (`~/ondemand/dev`).
 
-Clone your new repository to your sandbox environment (`~/ondemand/dev`).
-
-Place your container with the application and xpra in a location accessible to your user (for development) and update [the container path](https://github.com/psobolewskiPhD/bc_example_qupath/blob/be88adf8636531c6078c783e7b55d85512c82830/template/before.sh.erb#L54). For making public, move the container to a globally accessible location (`/cm/shared`) and update the path accordingly.
+Build the Apptainer [valis contianer](containers/valis-wsi_1.2.0_patched.def) and [bftools container  ](containers/bftools.def) and move them into a location accessible to your user (for development) and update [the container path](https://github.com/fercer/ood_image_registration/blob/96c04577d7e8acc2644127d045999c4fdf7267cb/template/before.sh.erb). For making public, move the container to a globally accessible location (`/cm/shared`) and update the path accordingly.
 
 ## Make your changes
 

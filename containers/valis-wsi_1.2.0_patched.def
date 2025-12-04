@@ -1,0 +1,26 @@
+bootstrap: docker
+from: cdgatenbee/valis-wsi:1.2.0
+
+%post
+    apt-get update; apt-get install -y git wget
+
+    cd /opt
+    git clone https://github.com/MathOnco/valis
+    cd valis
+    git checkout v1.2.0
+
+    # Patch the feature_detectors.py and feature_matcher.py files according to https://github.com/MathOnco/valis/issues/208#issuecomment-3208212972
+    sed -i 's/.numpy()/.cpu().numpy()/g' valis/feature_detectors.py
+    sed -i 's/.numpy()/.cpu().numpy()/g' valis/feature_matcher.py
+    sed -i '2157a\        else:' valis/registration.py
+    sed -i '2158a\            self.non_rigid_reg_kwargs = {}' valis/registration.py
+
+    /root/.local/bin/pip3 uninstall valis-wsi -y
+    /root/.local/bin/pip3 install /opt/valis
+    /root/.local/bin/pip3 install itk-elastix
+
+    # Download the script used for registration through the python API
+    wget "https://gist.github.com/fercer/21913333808a2dad2e5e1644714a4a1e/raw/3c4a4e9b95ae9943d29e6e954afe76bc0bc8344d/valis_registration.py" -O /opt/valis_registration.py
+
+%runscript
+    /root/.local/bin/python /opt/valis_registration.py $@
