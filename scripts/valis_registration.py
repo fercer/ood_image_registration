@@ -4,7 +4,6 @@
 import os
 import argparse
 
-from pathlib import Path
 from valis import registration, non_rigid_registrars
 from valis.feature_matcher import Matcher
 from valis.feature_detectors import VggFD
@@ -23,12 +22,13 @@ class BioFormatsSlideReaderZ(BioFormatsSlideReader):
     def slide2vips(self, level, series=None, xywh=None, tile_wh=None, z=0, t=0, *args, **kwargs):
         return super(BioFormatsSlideReaderZ, self).slide2vips(level, series=series, xywh=xywh, tile_wh=tile_wh, z=self._z_slice, t=t, *args, **kwargs)
 
-"""
-From https://github.com/MathOnco/valis/issues/205#issuecomment-3192079394
-This class allows to use SimpleElastix for non-rigid registration after the original package used for this (SimpleElastix) was deprecated and repalced by SimpleITK.
-"""
+
 class SimpleElastixWarper2(non_rigid_registrars.NonRigidRegistrar):
-    """Uses SimpleElastix to register images
+    """
+    From https://github.com/MathOnco/valis/issues/205#issuecomment-3192079394
+    This class allows to use SimpleElastix for non-rigid registration after the original package used for this (SimpleElastix) was deprecated and repalced by SimpleITK.
+
+    Uses SimpleElastix to register images
 
     """
     def __init__(self, params=None, elastix_params={}):
@@ -119,7 +119,20 @@ IMAGE_READERS = {
     "vips": VipsSlideReader
 }
 
-def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list, apply_registration=False,
+
+def same_name_check(out_basename, out_extension):
+    if not os.path.isfile(f"{out_basename}.{out_extension}"):
+        return f"{out_basename}.{out_extension}"
+
+    same_name_count = 1
+    while os.path.isfile(f"{out_basename}_({same_name_count}).{out_extension}"):
+        same_name_count += 1
+
+    return f"{out_basename}_({same_name_count}).{out_extension}"
+
+
+def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list,
+         apply_registration=False,
          registrar_file=None,
          non_rigid=False,
          micro=False,
@@ -140,11 +153,14 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list, app
          for img_fn in img_list
     ]
     img_list_preprocessors = [
-        (img_fn, preprocessor, img_reader, {"z_slice": int(img_reader_arg)} if img_reader_arg is not None else {})
+        (img_fn, preprocessor, img_reader,{"z_slice": int(img_reader_arg)} if img_reader_arg is not None else {})
         for img_fn, preprocessor, img_reader, img_reader_arg in img_list_preprocessors
     ]
 
-    img_list, preprocessors, image_readers, image_readers_kwargs = list(zip(*img_list_preprocessors))
+    (img_list,
+     preprocessors,
+     image_readers,
+     image_readers_kwargs) = list(zip(*img_list_preprocessors))
 
     processor_dict = {
         fn: PREPROCESSORS.get(func_name, None)
@@ -152,13 +168,15 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list, app
     }
     reader_dict = {
         fn: [IMAGE_READERS.get(func_name, IMAGE_READERS["vips"]), func_kwargs]
-        for fn, func_name, func_kwargs in zip(img_list, image_readers, image_readers_kwargs)
+        for fn, func_name, func_kwargs in zip(img_list, image_readers,
+                                              image_readers_kwargs)
     }
 
     print("Image processors:", processor_dict)
     print("Image readers:", reader_dict)
 
-    # Use by default the first image passed in the image list as reference to align into
+    # By default the first image passed in the image list is used as reference
+    # to align the rest of the images to it.
     reference_img_f = img_list[0]
 
     if registrar_file is not None:
@@ -166,12 +184,14 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list, app
 
     else:
         if matcher_cls is not None and matcher_cls == "Vgg":
-            matcher = Matcher(feature_detector=VggFD(), metric_type=metric_type)
+            matcher = Matcher(feature_detector=VggFD(),
+                              metric_type=metric_type)
         else:
             matcher = registration.DEFAULT_MATCHER
 
         if non_rigid:
-            if non_rigid_registrar_cls is not None and non_rigid_registrar_cls == "SimpleElastix":
+            if (non_rigid_registrar_cls is not None
+               and non_rigid_registrar_cls == "SimpleElastix"):
                 non_rigid_registrar_cls = SimpleElastixWarper2
                 non_rigid_reg_params = {}
             else:
@@ -183,7 +203,8 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list, app
             non_rigid_registrar_cls = None
             non_rigid_reg_params = None
 
-        # Create a Valis object and use it to register the slides in slide_src_dir
+        # Create a Valis object and use it to register the slides inside
+        # the slide_src_dir directory
         registrar = registration.Valis(
             slide_src_dir,
             results_dst_dir,
@@ -191,7 +212,8 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list, app
             reference_img_f=reference_img_f,
             align_to_reference=reference_img_f is not None,
             matcher=matcher,
-            matcher_for_sorting=Matcher(feature_detector=VggFD(), metric_type=metric_type),
+            matcher_for_sorting=Matcher(feature_detector=VggFD(),
+                                        metric_type=metric_type),
             non_rigid_registrar_cls=non_rigid_registrar_cls,
             non_rigid_reg_params=non_rigid_reg_params,
             max_processed_image_dim_px=max_processed_image_dim_px,
@@ -213,21 +235,37 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list, app
                 non_rigid_reg_params=non_rigid_reg_params
             )
 
-    # Save registration transform matrices and slides as ome.tiff (only if requested)
+    # Save registration transform matrices.
+    # If requested by the user, save the transformed slides as ome.tiff too.
+    ref_slide = registrar.get_slide(reference_img_f)
     for img_name in registrar.original_img_list:
         if img_name == reference_img_f:
             continue
 
         non_ref_slide = registrar.get_slide(img_name)
-        dst_M_fn = os.path.join(registered_slide_dst_dir, f"{non_ref_slide.name}_transformation_matrix.csv")
+        dst_M_fn = same_name_check(
+            os.path.join(registered_slide_dst_dir,
+                         f"{non_ref_slide.name}_to_{ref_slide.name}"),
+            "csv"
+        )
 
         # Save transformation matrix
         np.savetxt(dst_M_fn, non_ref_slide.M, delimiter=",", fmt="%0.18f")
 
         if apply_registration:
-            dst_img_fn = os.path.join(registered_slide_dst_dir, f"{non_ref_slide.name}.ome.tiff")
-            non_ref_slide.warp_and_save_slide(dst_img_fn, non_rigid=non_rigid, crop=registration.CROP_REF, compression=compression, Q=Q)
+            dst_img_fn = same_name_check(
+                os.path.join(registered_slide_dst_dir,
+                             f"{non_ref_slide.name}_to_{ref_slide.name}"),
+                "ome.tiff"
+            )
 
+            non_ref_slide.warp_and_save_slide(
+                dst_img_fn,
+                non_rigid=non_rigid,
+                crop=registration.CROP_REF,
+                compression=compression,
+                Q=Q
+            )
 
     # Kill the JVM
     registration.kill_jvm()

@@ -130,27 +130,4 @@ command="singularity run -B ${BF_FORMAT_F}:/root/.local/lib/python3.12/site-pack
 echo "$command"
 eval "$command"
 
-# Change the name of the output registered files to associate them with the reference image
-REG_BASENAME=$(basename $REGISTERING_FILENAME)
-if [[ "${REGISTERING_FILENAME}" != *".ome.tif"* ]] ; then
-    REG_BASENAME=${REG_BASENAME%.*}
-else
-    REG_BASENAME=${REG_BASENAME%.ome.tif*}
-fi
-OUTPUT_REG_FILENAME="${OUTPUT_DIR}/${REG_BASENAME}.ome.tiff"
-
-OUTPUT_REG_BASENAME=$(basename $OUTPUT_REG_FILENAME)
-OUTPUT_REG_BASENAME=${OUTPUT_REG_BASENAME%.ome.tiff}
-OUTPUT_REG_NEW_FILENAME=${OUTPUT_REG_BASENAME}_to_${REFERENCE_BASENAME}
-
-SAME_NAME_COUNTER=1
-
-while [ -f "${OUTPUT_DIR}/${OUTPUT_REG_NEW_FILENAME}.ome.tiff" ]; do
-    OUTPUT_REG_NEW_FILENAME="${OUTPUT_REG_BASENAME}_to_${REFERENCE_BASENAME}_(${SAME_NAME_COUNTER})"
-    SAME_NAME_COUNTER=$((SAME_NAME_COUNTER + 1))
-done
-
-mv "${OUTPUT_DIR}/${OUTPUT_REG_BASENAME}.ome.tiff" "${OUTPUT_DIR}/${OUTPUT_REG_NEW_FILENAME}.ome.tiff"
-mv "${OUTPUT_DIR}/${OUTPUT_REG_BASENAME}_transformation_matrix.csv" "${OUTPUT_DIR}/${OUTPUT_REG_NEW_FILENAME}_transformation_matrix.csv"
-
 echo "TIMING - Finished Image Registration at: $(date)"
