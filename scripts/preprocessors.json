@@ -1,0 +1,13 @@
+{
+    "ImageProcesser": {},
+    "ChannelGetter": {},
+    "ColorfulStandardizer": {},
+    "JCDist": {},
+    "OD": {},
+    "ColorDeconvolver": {},
+    "Luminosity": {},
+    "BgColorDistance": {},
+    "StainFlattener": {},
+    "Gray": {},
+    "HEDeconvolution": {}
+}

@@ -7,7 +7,17 @@ import argparse
 from valis import registration, non_rigid_registrars
 from valis.feature_matcher import Matcher
 from valis.feature_detectors import VggFD
-from valis.preprocessing import ChannelGetter, HEDeconvolution
+from valis.preprocessing import (ImageProcesser,
+                                 ChannelGetter,
+                                 ColorfulStandardizer,
+                                 JCDist,
+                                 OD,
+                                 ColorDeconvolver,
+                                 Luminosity,
+                                 BgColorDistance,
+                                 StainFlattener,
+                                 Gray,
+                                 HEDeconvolution)
 from valis.slide_io import VipsSlideReader, BioFormatsSlideReader
 
 import numpy as np

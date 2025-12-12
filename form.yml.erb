@@ -1,3 +1,19 @@
+<%-
+  require 'json'
+  # Get the directory of the current file
+  conf_dir = Pathname.new(__dir__)
+  
+  # Read and parse the JSON file
+  preprocessors_json_path = conf_dir.join("scripts/preprocessors.json")
+  
+  # Default to empty if file is missing (error handling)
+  if File.exist?(preprocessors_json_path)
+    preprocessor_options = JSON.parse(File.read(preprocessors_json_path))
+  else
+    preprocessor_options = [["Error: JSON not found", ""]]
+  end
+-%>
+
 # Batch Connect app configuration file
 #
 # @note Used to define the submitted cluster, title, description, and
@@ -68,6 +84,10 @@ attributes:
     widget: "path_selector"
     show_hidden: false
     show_files: true
+  reference_preprocessor:
+    widget: "select"
+    label: "Reference image preprocessor"
+    options: <%= preprocessor_options %>
   input_image:
     widget: "path_selector"
     show_hidden: false
@@ -133,6 +153,7 @@ form:
   - bc_num_hours
   - bc_email_on_started
   - reference_image
+  - reference_preprocessor
   - input_image
   - output_dir
   - temp_dir
