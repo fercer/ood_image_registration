@@ -1,23 +1,44 @@
 <%-
   require 'json'
-  # Get the directory of the current file
-  conf_dir = Pathname.new(__dir__)
   
-  # Read and parse the JSON file
-  preprocessors_json_path = conf_dir.join("scripts/preprocessors.json")
+  # 1. Load the JSON file
+  base_json_path = Pathname.new(__dir__).join("form_attributes/base_options.json")
+  advanced_json_path = Pathname.new(__dir__).join("form_attributes/advanced_options.json")
+  preprocessors_json_path = Pathname.new(__dir__).join("scripts/preprocessors.json")
   
   # Default to empty if file is missing (error handling)
+  if File.exist?(base_json_path)
+    base_options_data = JSON.parse(File.read(base_json_path))
+  else
+    base_options_data = {}
+  end
+  
+  if File.exist?(advanced_json_path)
+    advanced_options_data = JSON.parse(File.read(advanced_json_path))
+  else
+    advanced_options_data = {}
+  end
+
   if File.exist?(preprocessors_json_path)
     preprocessor_options = JSON.parse(File.read(preprocessors_json_path))
   else
-    preprocessor_options = [["Error: JSON not found", ""]]
+    preprocessor_options = {}
   end
+
+  # 2. Prepare the IDs for JavaScript
+  # OOD prefixes all attributes with this string
+  prefix = "batch_connect_session_context_"
+  
+  # create a list
+  base_ids = base_options_data.keys.map { |k| "#{prefix}#{k}" }
+  advanced_ids = advanced_options_data.keys.map { |k| "#{prefix}#{k}" }
 -%>
 
+<div id="base-metadata" data-ids='<%= base_ids.to_json %>'></div>
+<div id="advanced-metadata" data-ids='<%= advanced_ids.to_json %>'></div>
+
 # Batch Connect app configuration file
-#
-# @note Used to define the submitted cluster, title, description, and
-#   hard-coded/user-defined attributes that make up this Batch Connect app.
+
 ---
 
 # **MUST** set cluster id here that matches cluster configuration file located
@@ -26,137 +47,44 @@
 #     cluster: "owens"
 cluster: "winter2"
 
-# Define attribute values that aren't meant to be modified by the user within
-# the Dashboard form
 attributes:
-  # Set the corresponding modules that need to be loaded for Jupyter to run
-  #
-  # @note It is called within the batch job as `module load <modules>` if
-  #   defined
-  # @example Do not load any modules
-  #     modules: ""
-  # @example Using default python module
-  #     modules: "python"
-  # @example Using specific python module
-  #     modules: "python/3.5"
-  # @example Using combination of modules
-  #     modules: "python/3.5 cuda/8.0.44"
   modules: "apptainer"
-  partition:
-    label: "Partition"
-    widget: select
-    options:
-      - ['compute']
-  custom_qos:
-    label: "QOS"
-    widget: select
-    options:
-      - ['batch', data-exclusive-option-for-queue-compute: true]
-      # - ['test', data-exclusive-option-for-queue-rit-test: true]
-    help: |
-      Currently, image registration jobs are limited to the compute partition and batch QOS.
-  num_cores:
-    widget: "number_field"
-    label: "Number of cores"
-    value: 16
-    help: |
-      The image registration process has been tested with 16 cores only.
-    min: 8
-    max: 16
-    step: 8
-  bc_num_hours:
-    label: "Number of hours"
-    value: 1
-    min: 1
-    max: 2
-    step: 1
-    help: |
-      The image registration process usually takes one hour only; however, this depends on the size of the image.
-  memtask:
-    widget: select
-    label: "Memory (in GB)"
-    options:
-      - ["256GB"]
-      - ["512GB"]
-    help: |
-      The image registration requires at least 256 GB mainly for the image generation step after alignment.
-  reference_image:
-    widget: "path_selector"
-    show_hidden: false
-    show_files: true
+
+  # The Toggle Switch
+  show_advanced:
+    widget: check_box
+    label: "Show Advanced Options"
+    value: 0
+
+  # 4. Programmatically Generate Base Attributes from JSON
+  <%- base_options_data.each do |key, props| -%>
+  <%= key %>:
+    widget: "<%= props['widget'] %>"
+    label: "<%= props['label'] %>"
+    <%- if props.key?('value') -%>
+    value: <%= props['value'] %>
+    <%- end -%>
+    <%- if props.key?('min') -%>
+    min: <%= props['min'] %>
+    <%- end -%>
+    <%- if props.key?('max') -%>
+    max: <%= props['max'] %>
+    <%- end -%>
+    <%- if props.key?('step') -%>
+    step: <%= props['step'] %>
+    <%- end -%>
+    <%- if props.key?('options') -%>
+    options: <%= props['options'] %>
+    <%- end -%>
+    <%- if props.key?('show_hidden') -%>
+    show_hidden: <%= props['show_hidden'] %>
+    <%- end -%>
+    <%- if props.key?('show_files') -%>
+    show_files: <%= props['show_files'] %>
+    <%- end -%>
+  <%- end -%>
+
   reference_preprocessor:
     widget: "select"
     label: "Reference image preprocessor"
     options: <%= preprocessor_options %>
-  input_image:
-    widget: "path_selector"
-    show_hidden: false
-    show_files: true
-  output_dir:
-    widget: "path_selector"
-    show_hidden: false
-    show_files: false
-  temp_dir:
-    widget: "path_selector"
-    show_hidden: false
-    show_files: true
-  processing_size:
-    widget: select
-    label: "Processing size"
-    options:
-      - ["8196"]
-      - ["4096"]
-      - ["2048"]
-      - ["1024"]
-      - ["512"]
-    help: |
-      Size at which the registration process is applied. The image is resized to have its largest side equal to the selected processing size. Highest registration performance requires at least the 8196 size setting.
-  output_codec:
-    widget: select
-    label: Compression codec
-    options:
-      - ["jp2k"]
-      - ["jpeg"]
-      - ["zstd"]
-      - ["webp"]
-      - ["lzw"]
-      - ["ccittfax4"]
-      - ["packbits"]
-      - ["deflate"]
-      - ["none"]
-    help: |
-      Codec used to compress the output .tif image
-  output_codec_quality:
-    label: "Compression codec quality"
-    value: 100
-    min: 1
-    max: 100
-    step: 1
-    help: |
-      The quality to be preserver after compressing the image with the selected codec. For loss-less compression set it to 100.
-
-# All of the attributes that make up the Dashboard form (in respective order),
-# and made available to the submit configuration file and the template ERB
-# files
-#
-# @note You typically do not need to modify this unless you want to add a new
-#   configurable value
-# @note If an attribute listed below is hard-coded above in the `attributes`
-#   option, then it will not appear in the form page that the user sees in the
-#   Dashboard
-form:
-  - modules
-  - partition
-  - custom_qos
-  - num_cores
-  - memtask
-  - bc_num_hours
-  - bc_email_on_started
-  - reference_image
-  - reference_preprocessor
-  - input_image
-  - output_dir
-  - temp_dir
-  - processing_size
-  - output_codec
-  - output_codec_quality

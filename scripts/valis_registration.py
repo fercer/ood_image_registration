@@ -9,13 +9,10 @@ from valis.feature_matcher import Matcher
 from valis.feature_detectors import VggFD
 from valis.preprocessing import (ChannelGetter,
                                  ColorfulStandardizer,
-                                 JCDist,
                                  OD,
-                                 ColorDeconvolver,
                                  Luminosity,
                                  BgColorDistance,
                                  StainFlattener,
-                                 Gray,
                                  HEDeconvolution)
 from valis.slide_io import VipsSlideReader, BioFormatsSlideReader
 
