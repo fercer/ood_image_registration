@@ -1,20 +1,4 @@
 {
-    "partition": {
-        "label": "Partition",
-        "widget": "select",
-        "options": 
-        [
-            ["compute"]
-        ]
-    },
-    "custom_qos": {
-        "label": "QOS",
-        "widget": "select",
-        "options": [
-            ["batch", "data-exclusive-option-for-queue-compute: true"]
-        ],
-        "help": "Currently, image registration jobs are limited to the compute partition and batch QOS."
-    },
     "num_cores": {
         "widget": "number_field",
         "label": "Number of cores",
@@ -25,6 +9,7 @@
         "step": 8
     },
     "bc_num_hours": {
+        "widget": "number_field",
         "label": "Number of hours",
         "value": 1,
         "min": 1,
@@ -90,6 +75,7 @@
         "help": "Codec used to compress the output .tif image"
     },
     "output_codec_quality":{
+        "widget": "number_field",
         "label": "Compression codec quality",
         "value": 100,
         "min": 1,

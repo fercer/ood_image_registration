@@ -50,11 +50,25 @@ cluster: "winter2"
 attributes:
   modules: "apptainer"
 
-  # The Toggle Switch
-  show_advanced:
-    widget: check_box
-    label: "Show Advanced Options"
-    value: 0
+  partition:
+    label: "Partition"
+      "widget": "select"
+      "options":
+        - ["compute"]
+
+  custom_qos:
+    label: "QOS",
+    widget: "select"
+      "options":
+        - ["batch", data-exclusive-option-for-queue-compute: true]
+        # - ['test', data-exclusive-option-for-queue-rit-test: true]
+    help: "Currently, image registration jobs are limited to the compute partition and batch QOS."
+
+  # # The Toggle Switch
+  # show_advanced:
+  #   widget: check_box
+  #   label: "Show Advanced Options"
+  #   value: 0
 
   # 4. Programmatically Generate Base Attributes from JSON
   <%- base_options_data.each do |key, props| -%>
@@ -82,9 +96,12 @@ attributes:
     <%- if props.key?('show_files') -%>
     show_files: <%= props['show_files'] %>
     <%- end -%>
+    <%- if props.key?('help') -%>
+    help: <%= props['help'] %>
+    <%- end -%>
   <%- end -%>
 
-  reference_preprocessor:
-    widget: "select"
-    label: "Reference image preprocessor"
-    options: <%= preprocessor_options %>
+  # reference_preprocessor:
+  #   widget: "select"
+  #   label: "Reference image preprocessor"
+  #   options: <%= preprocessor_options %>
