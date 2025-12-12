@@ -153,7 +153,7 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list,
          for img_fn in img_list
     ]
     img_list_preprocessors = [
-        (img_fn, preprocessor, img_reader,{"z_slice": int(img_reader_arg)} if img_reader_arg is not None else {})
+        (img_fn, preprocessor, img_reader, {"z_slice": int(img_reader_arg)} if img_reader_arg is not None else {})
         for img_fn, preprocessor, img_reader, img_reader_arg in img_list_preprocessors
     ]
 
@@ -245,7 +245,7 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list,
         non_ref_slide = registrar.get_slide(img_name)
         dst_M_fn = same_name_check(
             os.path.join(registered_slide_dst_dir,
-                         f"{non_ref_slide.name}_to_{ref_slide.name}"),
+                         f"{non_ref_slide.name}_to_{ref_slide.name}_transformation_matrix"),
             "csv"
         )
 
