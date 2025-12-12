@@ -7,8 +7,7 @@ import argparse
 from valis import registration, non_rigid_registrars
 from valis.feature_matcher import Matcher
 from valis.feature_detectors import VggFD
-from valis.preprocessing import (ImageProcesser,
-                                 ChannelGetter,
+from valis.preprocessing import (ChannelGetter,
                                  ColorfulStandardizer,
                                  JCDist,
                                  OD,

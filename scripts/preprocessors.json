@@ -1,13 +1,9 @@
-{
-    "ImageProcesser": {},
-    "ChannelGetter": {},
-    "ColorfulStandardizer": {},
-    "JCDist": {},
-    "OD": {},
-    "ColorDeconvolver": {},
-    "Luminosity": {},
-    "BgColorDistance": {},
-    "StainFlattener": {},
-    "Gray": {},
-    "HEDeconvolution": {}
-}
+[
+    ["Select a single channel in a multichannel image", "ChannelGetter"],
+    ["Standardize the colorfulness of the image", "ColorfulStandardizer"],
+    ["Convert the image from RGB to optical density (OD) and calculate pixel norms", "OD"],
+    ["Stain flattener", "StainFlattener"],
+    ["Calculate distance between each pixel and the background color", "BgColorDistance"],
+    ["Get luminosity of an RGB image", "Luminosity"],
+    ["Normalize staining appearence of hematoxylin and eosin (H&E) stained image and get the H or E deconvolution image", "HEDeconvolution"]
+]
