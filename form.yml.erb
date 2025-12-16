@@ -2,40 +2,46 @@
   require 'json'
   
   # 1. Load the JSON file
-  base_json_path = Pathname.new(__dir__).join("form_attributes/base_options.json")
-  advanced_json_path = Pathname.new(__dir__).join("form_attributes/advanced_options.json")
+  base_json_path = Pathname.new(__dir__).join("form/base_options.json")
   preprocessors_json_path = Pathname.new(__dir__).join("scripts/preprocessors.json")
-  
+
   # Default to empty if file is missing (error handling)
   if File.exist?(base_json_path)
     base_options_data = JSON.parse(File.read(base_json_path))
   else
     base_options_data = {}
   end
-  
-  if File.exist?(advanced_json_path)
-    advanced_options_data = JSON.parse(File.read(advanced_json_path))
-  else
-    advanced_options_data = {}
-  end
 
   if File.exist?(preprocessors_json_path)
-    preprocessor_options = JSON.parse(File.read(preprocessors_json_path))
+    preprocessors_data = JSON.parse(File.read(preprocessors_json_path))
   else
-    preprocessor_options = {}
+    preprocessors_data = {}
   end
 
-  # 2. Prepare the IDs for JavaScript
   # OOD prefixes all attributes with this string
   prefix = "batch_connect_session_context_"
   
-  # create a list
-  base_ids = base_options_data.keys.map { |k| "#{prefix}#{k}" }
-  advanced_ids = advanced_options_data.keys.map { |k| "#{prefix}#{k}" }
--%>
+  advanced_args_ids = {"dropdowns" => {}, "show_checkboxes" => {}}
 
-<div id="base-metadata" data-ids='<%= base_ids.to_json %>'></div>
-<div id="advanced-metadata" data-ids='<%= advanced_ids.to_json %>'></div>
+  base_options_data.each do |key, props|
+    if props['widget'].include?('preprocessor')
+      advanced_args_ids["dropdowns"]["#{prefix}#{key.gsub('-', '_')}"] = {}
+
+      preprocessors_data.each do |preproc, preproc_props|
+        show_advanced_args_ids = []
+
+        preproc_props["arguments"].each do |arg_key, arg_widget|
+          show_advanced_args_ids << "#{prefix}#{key.gsub('-', '_')}_#{preproc.downcase}_#{arg_key.downcase.gsub('-', '_')}"
+        end
+
+        advanced_args_ids["show_checkboxes"]["#{prefix}show_advanced_#{key.gsub('-', '_')}_#{preproc.downcase}"] = show_advanced_args_ids
+        advanced_args_ids["dropdowns"]["#{prefix}#{key.gsub('-', '_')}"][preproc] = "#{prefix}show_advanced_#{key.gsub('-', '_')}_#{preproc.downcase}"
+      end
+    end
+  end
+  
+  advanced_args_ids = advanced_args_ids.to_json
+-%>
 
 # Batch Connect app configuration file
 
@@ -52,29 +58,75 @@ attributes:
 
   partition:
     label: "Partition"
-      "widget": "select"
-      "options":
-        - ["compute"]
+    widget: select
+    options:
+        - ['compute']
 
   custom_qos:
-    label: "QOS",
-    widget: "select"
-      "options":
-        - ["batch", data-exclusive-option-for-queue-compute: true]
+    label: "QOS"
+    widget: select
+    options:
+        - ['batch', data-exclusive-option-for-queue-compute: true]
         # - ['test', data-exclusive-option-for-queue-rit-test: true]
     help: "Currently, image registration jobs are limited to the compute partition and batch QOS."
-
-  # # The Toggle Switch
-  # show_advanced:
-  #   widget: check_box
-  #   label: "Show Advanced Options"
-  #   value: 0
 
   # 4. Programmatically Generate Base Attributes from JSON
   <%- base_options_data.each do |key, props| -%>
   <%= key %>:
-    widget: "<%= props['widget'] %>"
+  <%- if props['widget'].include?('preprocessor') -%>
+    widget: select
+    options:
+    <%- preprocessors_data.each do |preproc, preproc_props| %>
+      - ["<%= preproc_props['description'] %> (<%= preproc %>)", <%= preproc %>]
+    <%- end -%>
+  <%- preprocessors_data.each do |preproc, preproc_props| %>
+  
+  #------------------------------------------------------------------------------------------------------- Toggle Checkbox for Advanced Options
+  <%- if not preproc_props["arguments"].empty? -%>
+  show_advanced_<%= key %>_<%= preproc %>:
+    widget: check_box
+    label: "Show Advanced Options for <%= preproc %>"
+    value: 0  # Default to checked
+  <%- end -%>
+  #------------------------------------------------------------------------------------------------------- Advanced Options
+  <%- preproc_props["arguments"].each do |arg_key, arg_widget| %>
+  <%= key %>_<%= preproc %>_<%= arg_key %>:
+    widget: <%= arg_widget['widget'] %>
+    label: "<%= arg_widget['label'] %>"
+    <%- if arg_widget.key?('options') -%>
+    options:
+      <%- arg_widget['options'].each do |opt| %>
+      - [<%= opt %>]
+      <%- end -%>
+    <%- end -%>
+    <%- if arg_widget.key?('value') -%>
+    value: <%= arg_widget['value'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('min') -%>
+    min: <%= arg_widget['min'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('max') -%>
+    max: <%= arg_widget['max'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('step') -%>
+    step: <%= arg_widget['step'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('help') -%>
+    help: "<%= arg_widget['help'] %>"
+    <%- end -%>
+    cacheable: false
+  <%- end -%>
+  <%- end -%>
+  <%- else -%>
+    #----------------------------------------------------------------------------------------------------- Basic Options
+    widget: <%= props['widget'] %>
     label: "<%= props['label'] %>"
+    <%- if props.key?('options') -%>
+    options:
+      <%- props['options'].each do |opt| %>
+      - [<%= opt %>]
+      <%- end -%>
+    <%- end -%>
     <%- if props.key?('value') -%>
     value: <%= props['value'] %>
     <%- end -%>
@@ -87,9 +139,6 @@ attributes:
     <%- if props.key?('step') -%>
     step: <%= props['step'] %>
     <%- end -%>
-    <%- if props.key?('options') -%>
-    options: <%= props['options'] %>
-    <%- end -%>
     <%- if props.key?('show_hidden') -%>
     show_hidden: <%= props['show_hidden'] %>
     <%- end -%>
@@ -97,11 +146,30 @@ attributes:
     show_files: <%= props['show_files'] %>
     <%- end -%>
     <%- if props.key?('help') -%>
-    help: <%= props['help'] %>
+    help: "<%= props['help'] %>"
+    <%- end -%>
+    cacheable: false
     <%- end -%>
   <%- end -%>
+  json_bridge:
+    widget: "hidden_field"
+    value: '<%= advanced_args_ids %>'
 
-  # reference_preprocessor:
-  #   widget: "select"
-  #   label: "Reference image preprocessor"
-  #   options: <%= preprocessor_options %>
+form:
+ - modules
+ - partition
+ - custom_qos
+<%- base_options_data.each do |key, props| -%>
+ - <%= key %>
+ <%- if props['widget'].include?('preprocessor') -%>
+ <%- preprocessors_data.each do |preproc, preproc_props| %>
+ <%- if not preproc_props["arguments"].empty? -%>
+ - show_advanced_<%= key %>_<%= preproc %>
+ <%- end -%>
+ <%- preproc_props["arguments"].each do |arg_key, arg_widget| %>
+ - <%= key %>_<%= preproc %>_<%= arg_key %>
+ <%- end -%>
+ <%- end -%>
+ <%- end -%>
+<%- end -%>
+ - json_bridge

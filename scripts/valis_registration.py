@@ -15,7 +15,7 @@ from valis.preprocessing import (ChannelGetter,
                                  StainFlattener,
                                  HEDeconvolution)
 from valis.slide_io import VipsSlideReader, BioFormatsSlideReader
-
+import json
 import numpy as np
 import itk
 
@@ -277,7 +277,7 @@ def main(slide_src_dir, results_dst_dir, registered_slide_dst_dir, img_list,
     registration.kill_jvm()
 
 
-if __name__ == "__main__":
+def basic_arguments():
     args_parser = argparse.ArgumentParser("VALIS registration", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     args_parser.add_argument("-s", "--dst-dir-name", dest="slide_src_dir", help="Name of the output directory")
     args_parser.add_argument("-i", "--images", dest="img_list", type=str, nargs="+", help="Images to register. If not specified, all supported images from the source directory are used. Processing functions can be passed after each image (e.g. he_img:HEDeconvolution multichannel_img:ChannelGetter)")
@@ -305,6 +305,11 @@ if __name__ == "__main__":
     args_parser.add_argument("-c", "--codec", dest="compression", type=str, choices=["none", "jpeg", "deflate", "packbits", "ccittfax4", "lzw", "webp", "zstd", "jp2k"], help="Compression codec", default="deflate")
     args_parser.add_argument("-cq", "--compression-quality", dest="Q", type=int, help="Compression quality 1-100", default=100)
 
-    args = args_parser.parse_args()
+    return args_parser
+
+
+if __name__ == "__main__":
+    base_parser = basic_arguments()
+    args, remaining = base_parser.parse_known_args()
 
     main(**args.__dict__)
