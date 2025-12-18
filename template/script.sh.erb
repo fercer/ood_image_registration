@@ -43,15 +43,15 @@ if [ ! -d "$TEMP_DIR" ]; then
 fi
 
 REFERENCE_FILENAME="<%= context.reference_image %>"
-REGISTERING_FILENAME="<%= context.input_image %>"
+INPUT_FILENAME="<%= context.input_image %>"
 
 if [ ! -f "$REFERENCE_FILENAME" ]; then
     echo "Could not find reference image '${REFERENCE_FILENAME}'"
     exit 1
 fi
 
-if [ ! -f "$REGISTERING_FILENAME" ]; then
-    echo "Could not find input image '${REGISTERING_FILENAME}'"
+if [ ! -f "$INPUT_FILENAME" ]; then
+    echo "Could not find input image '${INPUT_FILENAME}'"
     exit 1
 fi
 
@@ -75,59 +75,50 @@ if [ ! -f "$BF_FORMAT_F" ]; then
     touch $BF_FORMAT_F
 fi
 
-# Determine the image preprocessor and reader required for the reference image
-REFERENCE_SHOWINF=$(singularity exec ${BFTOOLS_CONTAINER} /opt/bftools/showinf -no-upgrade -nopix ${REFERENCE_FILENAME})
-REFERENCE_SizeZ=($(echo "${REFERENCE_SHOWINF}" | grep "SizeZ" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
-REFERENCE_SizeC=($(echo "${REFERENCE_SHOWINF}" | grep "SizeC" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
+# Get the readers and preprocessors for the reference and input images
+<%-
+reference_preprocessor_args = []
+reference_reader_args = []
+input_preprocessor_args = []
+input_reader_args = []
 
-if [[ $REFERENCE_SizeC == 3 ]]; then
-    REFERENCE_PREPROCESSOR=":HEDeconvolution"
-else
-    REFERENCE_PREPROCESSOR=":ChannelGetter"
-fi
+reference_image_preprocessor = "reference_image_preprocessor_#{context.reference_image_preprocessor.downcase}_"
+reference_image_reader = "reference_image_preprocessor_#{context.reference_image_reader.downcase}_"
+input_image_preprocessor = "input_image_reader_#{context.input_image_preprocessor.downcase}_"
+input_image_reader = "input_image_reader_#{context.input_image_reader.downcase}_"
 
-if [[ $REFERENCE_SizeZ -gt 1 ]]; then
-    MID_Z=$((REFERENCE_SizeZ / 2))
-    REFERENCE_READER=":bioformats-Z:${MID_Z}"
-elif [[ $REFERENCE_FILENAME == *".ome.tif"* ]]; then
-    REFERENCE_READER=":bioformats"
-else
-    REFERENCE_READER=""
-fi
+context.to_h.each do |opt, opt_val|
+    if opt.start_with?(reference_image_preprocessor)
+        reference_preprocessor_args << "#{opt.to_s.gsub(reference_image_preprocessor, "--rp-")} #{opt_val}"
+    elsif opt.start_with?(reference_image_reader)
+        reference_reader_args << "#{opt.to_s.gsub(reference_image_reader, "--rr-")} #{opt_val}"
+    elsif opt.start_with?(input_image_preprocessor)
+        input_preprocessor_args << "#{opt.to_s.gsub(input_image_preprocessor, "--ip-")} #{opt_val}"
+    elsif opt.start_with?(input_image_reader)
+        input_reader_args << "#{opt.to_s.gsub(input_image_reader, "--ir-")} #{opt_val}"
+    end
+end
 
-REFERENCE_ARGS="${REFERENCE_FILENAME}${REFERENCE_PREPROCESSOR}${REFERENCE_READER}"
-
-# Determine the image preprocessor and reader required for each image according to the modality
-REG_SHOWINF=$(singularity exec ${BFTOOLS_CONTAINER} /opt/bftools/showinf -no-upgrade -nopix ${REGISTERING_FILENAME})
-REG_SizeZ=($(echo "${REG_SHOWINF}" | grep "SizeZ" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
-REG_SizeC=($(echo "${REG_SHOWINF}" | grep "SizeC" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
-
-if [[ $REG_SizeC == 3 ]]; then
-    REG_PREPROCESSOR=":HEDeconvolution"
-else
-    REG_PREPROCESSOR=":ChannelGetter"
-fi
-
-if [[ $REG_SizeZ -gt 1 ]]; then
-    MID_Z=$((REG_SizeZ / 2))
-    REG_READER=":bioformats-Z:${MID_Z}"
-elif [[ "$REFERENCE_FILENAME" == *".ome.tif"* ]]; then
-    REG_READER=":bioformats"
-else
-    REG_READER=""
-fi
-
-REG_ARGS="${REGISTERING_FILENAME}${REG_PREPROCESSOR}${REG_READER}"
+reference_preprocessor_args = reference_preprocessor_args.join(" ")
+reference_reader_args = reference_reader_args.join(" ")
+input_preprocessor_args = input_preprocessor_args.join(" ")
+input_reader_args = input_reader_args.join(" ")
+-%>
 
 # Execute registration pipeline ----------------------------------------------------------------
 command="singularity run -B ${BF_FORMAT_F}:/root/.local/lib/python3.12/site-packages/valis/data/bf_formats.txt ${VALIS_CONTAINER}\
- -s ${REFERENCE_BASENAME} -o ${TEMP_DIR} -d ${OUTPUT_DIR}\
- -i ${REFERENCE_ARGS} ${REG_ARGS}\
+ -s ${REFERENCE_BASENAME} -t ${TEMP_DIR} -o ${OUTPUT_DIR}\
+ -r ${REFERENCE_FILENAME}\
+ -rp <%= context.reference_image_preprocessor %> <%= reference_preprocessor_args %>\
+ -rr <%= context.reference_image_reader %> <%= reference_reader_args %>\
+ -i ${INPUT_FILENAME}\
+ -ip <%= context.input_image_preprocessor %> <%= input_preprocessor_args %>\
+ -ir <%= context.input_image_reader %> <%= input_reader_args %>\
  -mp ${PROCESSING_SIZE}\
  -c ${CODEC} -cq ${QUALITY}\
  -y"
 
 echo "$command"
-eval "$command"
+#eval "$command"
 
 echo "TIMING - Finished Image Registration at: $(date)"
