@@ -15,7 +15,7 @@
         "min": 1,
         "max": 2,
         "step": 1,
-        "help": "The image registration process usually takes one hour only; however, this depends on the size of the image."
+        "help": "The image registration process usually takes less than an hour; however, this depends on the size of the image."
     },
     "memtask": {
         "widget": "select",
@@ -30,12 +30,17 @@
         "widget": "path_selector",
         "show_hidden": false,
         "show_files": true,
-        "help": "The input image will be registered towards this image."
+        "help": "The reference image that the input image will be registered towards to."
+    },
+    "reference_image_reader":{
+        "widget": "reader",
+        "label": "Reference image reader",
+        "help": "The reference image will be read using this class. More info here: https://valis.readthedocs.io/en/latest/slide_io.html#imagereader."
     },
     "reference_image_preprocessor":{
         "widget": "preprocessor",
-        "label": "Input image pre-processor",
-        "help": "The reference image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html."
+        "label": "Reference image pre-processor",
+        "help": "The reference image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html#classes."
     },
     "input_image": {
         "widget": "path_selector",
@@ -43,10 +48,15 @@
         "show_files": true,
         "help": "This image will be registered towards the reference image."
     },
+    "input_image_reader":{
+        "widget": "reader",
+        "label": "Input image reader",
+        "help": "The input image will be read using this class. More info here: https://valis.readthedocs.io/en/latest/slide_io.html#imagereader."
+    },
     "input_image_preprocessor":{
         "widget": "preprocessor",
         "label": "Input image pre-processor",
-        "help": "The input image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html."
+        "help": "The input image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html#classes."
     },
     "output_dir": {
         "widget": "path_selector",

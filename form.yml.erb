@@ -4,6 +4,7 @@
   # 1. Load the JSON file
   base_json_path = Pathname.new(__dir__).join("form/base_options.json")
   preprocessors_json_path = Pathname.new(__dir__).join("scripts/preprocessors.json")
+  readers_json_path = Pathname.new(__dir__).join("scripts/readers.json")
 
   # Default to empty if file is missing (error handling)
   if File.exist?(base_json_path)
@@ -12,10 +13,16 @@
     base_options_data = {}
   end
 
+  custom_options_data = {
+    "preprocessor" => {},
+    "reader" => {}
+  }
   if File.exist?(preprocessors_json_path)
-    preprocessors_data = JSON.parse(File.read(preprocessors_json_path))
-  else
-    preprocessors_data = {}
+    custom_options_data["preprocessor"] = JSON.parse(File.read(preprocessors_json_path))
+  end
+
+  if File.exist?(readers_json_path)
+    custom_options_data["reader"] = JSON.parse(File.read(readers_json_path))
   end
 
   # OOD prefixes all attributes with this string
@@ -24,18 +31,18 @@
   advanced_args_ids = {"dropdowns" => {}, "show_checkboxes" => {}}
 
   base_options_data.each do |key, props|
-    if props['widget'].include?('preprocessor')
+    if props['widget'].include?('preprocessor') || props['widget'].include?('reader')
       advanced_args_ids["dropdowns"]["#{prefix}#{key.gsub('-', '_')}"] = {}
 
-      preprocessors_data.each do |preproc, preproc_props|
+      custom_options_data[props['widget']].each do |opt, opt_props|
         show_advanced_args_ids = []
 
-        preproc_props["arguments"].each do |arg_key, arg_widget|
-          show_advanced_args_ids << "#{prefix}#{key.gsub('-', '_')}_#{preproc.downcase}_#{arg_key.downcase.gsub('-', '_')}"
+        opt_props["arguments"].each do |arg_key, arg_widget|
+          show_advanced_args_ids << "#{prefix}#{key.gsub('-', '_')}_#{opt.downcase}_#{arg_key.downcase.gsub('-', '_')}"
         end
 
-        advanced_args_ids["show_checkboxes"]["#{prefix}show_advanced_#{key.gsub('-', '_')}_#{preproc.downcase}"] = show_advanced_args_ids
-        advanced_args_ids["dropdowns"]["#{prefix}#{key.gsub('-', '_')}"][preproc] = "#{prefix}show_advanced_#{key.gsub('-', '_')}_#{preproc.downcase}"
+        advanced_args_ids["show_checkboxes"]["#{prefix}show_advanced_#{key.gsub('-', '_')}_#{opt.downcase}"] = show_advanced_args_ids
+        advanced_args_ids["dropdowns"]["#{prefix}#{key.gsub('-', '_')}"][opt] = "#{prefix}show_advanced_#{key.gsub('-', '_')}_#{opt.downcase}"
       end
     end
   end
@@ -73,24 +80,28 @@ attributes:
   # 4. Programmatically Generate Base Attributes from JSON
   <%- base_options_data.each do |key, props| -%>
   <%= key %>:
-  <%- if props['widget'].include?('preprocessor') -%>
+  <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') -%>
     widget: select
+    label: "<%= props['label'] %>"
     options:
-    <%- preprocessors_data.each do |preproc, preproc_props| %>
-      - ["<%= preproc_props['description'] %> (<%= preproc %>)", <%= preproc %>]
+    <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
+      - ["<%= opt_props['description'] %> (<%= opt %>)", <%= opt %>]
     <%- end -%>
-  <%- preprocessors_data.each do |preproc, preproc_props| %>
+    <%- if props.key?('help') -%>
+    help: "<%= props['help'] %>"
+    <%- end -%>
+  <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
   
   #------------------------------------------------------------------------------------------------------- Toggle Checkbox for Advanced Options
-  <%- if not preproc_props["arguments"].empty? -%>
-  show_advanced_<%= key %>_<%= preproc %>:
+  <%- if not opt_props["arguments"].empty? -%>
+  show_advanced_<%= key %>_<%= opt %>:
     widget: check_box
-    label: "Show Advanced Options for <%= preproc %>"
-    value: 0  # Default to checked
+    label: "Show Advanced Options for <%= opt %>"
+    value: 0
   <%- end -%>
   #------------------------------------------------------------------------------------------------------- Advanced Options
-  <%- preproc_props["arguments"].each do |arg_key, arg_widget| %>
-  <%= key %>_<%= preproc %>_<%= arg_key %>:
+  <%- opt_props["arguments"].each do |arg_key, arg_widget| %>
+  <%= key %>_<%= opt %>_<%= arg_key %>:
     widget: <%= arg_widget['widget'] %>
     label: "<%= arg_widget['label'] %>"
     <%- if arg_widget.key?('options') -%>
@@ -161,13 +172,13 @@ form:
  - custom_qos
 <%- base_options_data.each do |key, props| -%>
  - <%= key %>
- <%- if props['widget'].include?('preprocessor') -%>
- <%- preprocessors_data.each do |preproc, preproc_props| %>
- <%- if not preproc_props["arguments"].empty? -%>
- - show_advanced_<%= key %>_<%= preproc %>
+ <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') -%>
+ <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
+ <%- if not opt_props["arguments"].empty? -%>
+ - show_advanced_<%= key %>_<%= opt %>
  <%- end -%>
- <%- preproc_props["arguments"].each do |arg_key, arg_widget| %>
- - <%= key %>_<%= preproc %>_<%= arg_key %>
+ <%- opt_props["arguments"].each do |arg_key, arg_widget| %>
+ - <%= key %>_<%= opt %>_<%= arg_key %>
  <%- end -%>
  <%- end -%>
  <%- end -%>

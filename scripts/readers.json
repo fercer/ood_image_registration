@@ -1,0 +1,23 @@
+{
+    "BioFormatsSlideReader": {
+        "description": "Read slides using BioFormats",
+        "arguments": {}
+    },
+    "BioFormatsSlideReaderZ":{
+        "description": "Read slides using BioFormats at a specific Z slice",
+        "arguments": {
+            "z": {
+                "widget": "number_field",
+                "label": "Select a Z slice index",
+                "value": 0,
+                "min": 0,
+                "step": 1,
+                "type": "int"
+            }
+        }
+    },
+    "VipsSlideReader": {
+        "description": "Read slides using pyvips",
+        "arguments": {}
+    }
+}
