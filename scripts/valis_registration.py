@@ -204,7 +204,6 @@ if __name__ == "__main__":
         input_image_reader_kwargs=args.input_image_reader_kwargs,
         input_image_preprocessor=args.input_image_preprocessor,
         input_image_preprocessor_kwargs=args.input_image_preprocessor_kwargs,
-        non_rigid=args.non_rigid,
         non_rigid_reg_params=non_rigid_reg_params,
         micro=args.micro,
         non_rigid_registrar_cls=non_rigid_registrar_cls,
@@ -217,7 +216,7 @@ if __name__ == "__main__":
         args.input_image,
         args.registered_slide_dst_dir,
         apply_registration=args.apply_registration,
-        non_rigid_registrar_cls=non_rigid_registrar_cls,
+        non_rigid=args.non_rigid,
         compression=args.compression,
         Q=args.Q
     )
