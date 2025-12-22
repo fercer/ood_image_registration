@@ -28,21 +28,21 @@
   # OOD prefixes all attributes with this string
   prefix = "batch_connect_session_context_"
   
-  advanced_args_ids = {"dropdowns" => {}, "show_checkboxes" => {}}
+  advanced_args_ids = {}
 
   base_options_data.each do |key, props|
     if props['widget'].include?('preprocessor') || props['widget'].include?('reader')
-      advanced_args_ids["dropdowns"]["#{prefix}#{key.gsub('-', '_')}"] = {}
+      advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"] = {}
 
       custom_options_data[props['widget']].each do |opt, opt_props|
-        show_advanced_args_ids = []
+        advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt] = {
+          "widget_id" => "#{prefix}show_advanced_#{key.gsub('-', '_')}_#{opt.downcase}",
+          "widget_arguments" => {}
+        }
 
         opt_props["arguments"].each do |arg_key, arg_widget|
-          show_advanced_args_ids << "#{prefix}#{key.gsub('-', '_')}_#{opt.downcase}_#{arg_key.downcase.gsub('-', '_')}"
+          advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt]["widget_arguments"]["#{prefix}#{key.gsub('-', '_')}_#{opt.downcase}_#{arg_key.downcase.gsub('-', '_')}"] = arg_widget['type']
         end
-
-        advanced_args_ids["show_checkboxes"]["#{prefix}show_advanced_#{key.gsub('-', '_')}_#{opt.downcase}"] = show_advanced_args_ids
-        advanced_args_ids["dropdowns"]["#{prefix}#{key.gsub('-', '_')}"][opt] = "#{prefix}show_advanced_#{key.gsub('-', '_')}_#{opt.downcase}"
       end
     end
   end
@@ -150,6 +150,12 @@ attributes:
     <%- if props.key?('step') -%>
     step: <%= props['step'] %>
     <%- end -%>
+    <%- if props.key?('checked_value') -%>
+    checked_value: <%= props['checked_value'] %>
+    <%- end -%>
+    <%- if props.key?('unchecked_value') -%>
+    unchecked_value: <%= props['unchecked_value'] %>
+    <%- end -%>
     <%- if props.key?('show_hidden') -%>
     show_hidden: <%= props['show_hidden'] %>
     <%- end -%>
@@ -165,6 +171,7 @@ attributes:
   json_bridge:
     widget: "hidden_field"
     value: '<%= advanced_args_ids %>'
+    cacheable: false
 
 form:
  - modules

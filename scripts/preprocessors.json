@@ -16,14 +16,11 @@
                 "widget": "check_box",
                 "label": "Apply adaptive histogram equalization",
                 "value": 1,
-                "checked_value": true,
-                "unchecked_value": false,
                 "type": "bool"
             }, "invert": {
                 "widget": "check_box",
                 "label": "Invert intensity",
-                "checked_value": true,
-                "unchecked_value": false,
+                "value": 0,
                 "type": "bool"
             }
         }
@@ -43,15 +40,12 @@
             "invert": {
                 "widget": "check_box",
                 "label": "Invert intensity",
-                "checked_value": true,
-                "unchecked_value": false,
                 "value": 1,
                 "type": "bool"
             }, "adaptive_eq": {
                 "widget": "check_box",
                 "label": "Apply adaptive histogram equalization",
-                "checked_value": true,
-                "unchecked_value": false,
+                "value": 0,
                 "type": "bool"
             }
         }
@@ -62,8 +56,7 @@
             "adaptive_eq": {
                 "widget": "check_box",
                 "label": "Apply adaptive histogram equalization",
-                "checked_value": true,
-                "unchecked_value": false,
+                "value": 0,
                 "type": "bool"
             },
             "p": {
@@ -101,8 +94,6 @@
             "with_mask": {
                 "widget": "check_box",
                 "label": "Compute tissue mask",
-                "checked_value": true,
-                "unchecked_value": false,
                 "value": 1,
                 "help": "Compute stain flattening parameters on tissue-only pixels while avoiding background pixels.",
                 "type": "bool"
@@ -110,8 +101,6 @@
             "adaptive_eq": {
                 "widget": "check_box",
                 "label": "Apply adaptive histogram equalization",
-                "checked_value": true,
-                "unchecked_value": false,
                 "value": 1,
                 "type": "bool"
             },
