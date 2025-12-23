@@ -165,6 +165,9 @@ attributes:
     <%- if props.key?('help') -%>
     help: "<%= props['help'] %>"
     <%- end -%>
+    <%- if props.key?('required') -%>
+    required: <%= props['required'] %>
+    <%- end -%>
     cacheable: false
     <%- end -%>
   <%- end -%>

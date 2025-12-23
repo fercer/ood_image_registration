@@ -28,17 +28,33 @@ CODEC="<%= context.output_codec %>"
 QUALITY="<%= context.output_codec_quality %>"
 OUTPUT_DIR="<%= context.output_dir %>"
 
-if [ ! -d "$OUTPUT_DIR" ]; then
+if [ "${OUTPUT_DIR}" == "" ]; then
+    echo "The output directory was not defined. It will be set to the home directory '${HOME}'."
+    OUTPUT_DIR="${HOME}"
+fi
+if [ ! -d "${OUTPUT_DIR}" ]; then
+    echo "The output directory '${OUTPUT_DIR}' does not exist and will be created."
     mkdir -p "${OUTPUT_DIR}"
 fi
 
-if [ ! -d "$TEMP_DIR" ]; then
+# Check whether the directory was created successfully or not
+if [ ! -d "${OUTPUT_DIR}" ]; then
+    echo "Could not find output directory '${OUTPUT_DIR}'."
+    exit 1
+fi
+
+if [ "${TEMP_DIR}" == "" ]; then
+    echo "The temporary directory was not defined. It will be set to the same output directory '${OUTPUT_DIR}'."
+    TEMP_DIR=${OUTPUT_DIR}
+fi
+if [ ! -d "${TEMP_DIR}" ]; then
+    echo "The temporary directory '${TEMP_DIR}' does not exist and will be created."
     mkdir -p "${TEMP_DIR}"
 fi
 
-# Check if the directory was created successfully or not
-if [ ! -d "$TEMP_DIR" ]; then
-    echo "Could not create temporary file at ${TEMP_DIR}"
+# Check whether the directory was created successfully or not
+if [ ! -d "${TEMP_DIR}" ]; then
+    echo "Could not find temporary directory '${TEMP_DIR}'."
     exit 1
 fi
 

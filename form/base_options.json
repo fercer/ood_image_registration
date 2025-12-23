@@ -5,7 +5,7 @@
         "value": 16,
         "help": "The image registration process has been tested with 16 cores only.",
         "min": 8,
-        "max": 16,
+        "max": 64,
         "step": 8
     },
     "bc_num_hours": {
@@ -30,6 +30,7 @@
         "widget": "path_selector",
         "show_hidden": false,
         "show_files": true,
+        "required": true,
         "help": "The reference image that the input image will be registered towards to."
     },
     "reference_image_reader":{
@@ -46,6 +47,7 @@
         "widget": "path_selector",
         "show_hidden": false,
         "show_files": true,
+        "required": true,
         "help": "This image will be registered towards the reference image."
     },
     "input_image_reader":{
