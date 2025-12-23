@@ -22,7 +22,8 @@ from: cdgatenbee/valis-wsi:1.2.0
     # Clone this repository and get access to the VALIS registration script
     cd /opt
     git clone https://github.com/fercer/ood_image_registration
-    cp ood_image_registration/scripts/valis_registration.py /opt
+    cp ood_image_registration/scripts/*.py /opt
+    cp ood_image_registration/scripts/*.json /opt
     rm -r ood_image_registration
 
 %runscript
