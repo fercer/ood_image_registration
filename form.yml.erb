@@ -1,0 +1,196 @@
+<%-
+  require 'json'
+  
+  # 1. Load the JSON file
+  base_json_path = Pathname.new(__dir__).join("form/base_options.json")
+  preprocessors_json_path = Pathname.new(__dir__).join("scripts/preprocessors.json")
+  readers_json_path = Pathname.new(__dir__).join("scripts/readers.json")
+
+  # Default to empty if file is missing (error handling)
+  if File.exist?(base_json_path)
+    base_options_data = JSON.parse(File.read(base_json_path))
+  else
+    base_options_data = {}
+  end
+
+  custom_options_data = {
+    "preprocessor" => {},
+    "reader" => {}
+  }
+  if File.exist?(preprocessors_json_path)
+    custom_options_data["preprocessor"] = JSON.parse(File.read(preprocessors_json_path))
+  end
+
+  if File.exist?(readers_json_path)
+    custom_options_data["reader"] = JSON.parse(File.read(readers_json_path))
+  end
+
+  # OOD prefixes all attributes with this string
+  prefix = "batch_connect_session_context_"
+  
+  advanced_args_ids = {}
+
+  base_options_data.each do |key, props|
+    if props['widget'].include?('preprocessor') || props['widget'].include?('reader')
+      advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"] = {}
+
+      custom_options_data[props['widget']].each do |opt, opt_props|
+        advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt] = {
+          "widget_id" => "#{prefix}show_advanced_#{key.gsub('-', '_')}_#{opt.downcase}",
+          "widget_arguments" => {}
+        }
+
+        opt_props["arguments"].each do |arg_key, arg_widget|
+          advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt]["widget_arguments"]["#{prefix}#{key.gsub('-', '_')}_#{opt.downcase}_#{arg_key.downcase.gsub('-', '_')}"] = arg_widget['type']
+        end
+      end
+    end
+  end
+  
+  advanced_args_ids = advanced_args_ids.to_json
+-%>
+
+# Batch Connect app configuration file
+
+---
+
+# **MUST** set cluster id here that matches cluster configuration file located
+# under /etc/ood/config/clusters.d/*.yml
+# @example Use the Owens cluster at Ohio Supercomputer Center
+#     cluster: "owens"
+cluster: "winter2"
+
+attributes:
+  modules: "apptainer"
+
+  partition:
+    label: "Partition"
+    widget: select
+    options:
+        - ['compute']
+
+  custom_qos:
+    label: "QOS"
+    widget: select
+    options:
+        - ['batch', data-exclusive-option-for-queue-compute: true]
+        # - ['test', data-exclusive-option-for-queue-rit-test: true]
+    help: "Currently, image registration jobs are limited to the compute partition and batch QOS."
+
+  # 4. Programmatically Generate Base Attributes from JSON
+  <%- base_options_data.each do |key, props| -%>
+  <%= key %>:
+  <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') -%>
+    widget: select
+    label: "<%= props['label'] %>"
+    options:
+    <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
+      - ["<%= opt_props['description'] %> (<%= opt %>)", <%= opt %>]
+    <%- end -%>
+    <%- if props.key?('help') -%>
+    help: "<%= props['help'] %>"
+    <%- end -%>
+  <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
+  
+  #------------------------------------------------------------------------------------------------------- Toggle Checkbox for Advanced Options
+  <%- if not opt_props["arguments"].empty? -%>
+  show_advanced_<%= key %>_<%= opt %>:
+    widget: check_box
+    label: "Show Advanced Options for <%= opt %>"
+    value: 0
+  <%- end -%>
+  #------------------------------------------------------------------------------------------------------- Advanced Options
+  <%- opt_props["arguments"].each do |arg_key, arg_widget| %>
+  <%= key %>_<%= opt %>_<%= arg_key %>:
+    widget: <%= arg_widget['widget'] %>
+    label: "<%= arg_widget['label'] %>"
+    <%- if arg_widget.key?('options') -%>
+    options:
+      <%- arg_widget['options'].each do |opt| %>
+      - [<%= opt %>]
+      <%- end -%>
+    <%- end -%>
+    <%- if arg_widget.key?('value') -%>
+    value: <%= arg_widget['value'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('min') -%>
+    min: <%= arg_widget['min'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('max') -%>
+    max: <%= arg_widget['max'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('step') -%>
+    step: <%= arg_widget['step'] %>
+    <%- end -%>
+    <%- if arg_widget.key?('help') -%>
+    help: "<%= arg_widget['help'] %>"
+    <%- end -%>
+    cacheable: false
+  <%- end -%>
+  <%- end -%>
+  <%- else -%>
+    #----------------------------------------------------------------------------------------------------- Basic Options
+    widget: <%= props['widget'] %>
+    label: "<%= props['label'] %>"
+    <%- if props.key?('options') -%>
+    options:
+      <%- props['options'].each do |opt| %>
+      - [<%= opt %>]
+      <%- end -%>
+    <%- end -%>
+    <%- if props.key?('value') -%>
+    value: <%= props['value'] %>
+    <%- end -%>
+    <%- if props.key?('min') -%>
+    min: <%= props['min'] %>
+    <%- end -%>
+    <%- if props.key?('max') -%>
+    max: <%= props['max'] %>
+    <%- end -%>
+    <%- if props.key?('step') -%>
+    step: <%= props['step'] %>
+    <%- end -%>
+    <%- if props.key?('checked_value') -%>
+    checked_value: <%= props['checked_value'] %>
+    <%- end -%>
+    <%- if props.key?('unchecked_value') -%>
+    unchecked_value: <%= props['unchecked_value'] %>
+    <%- end -%>
+    <%- if props.key?('show_hidden') -%>
+    show_hidden: <%= props['show_hidden'] %>
+    <%- end -%>
+    <%- if props.key?('show_files') -%>
+    show_files: <%= props['show_files'] %>
+    <%- end -%>
+    <%- if props.key?('help') -%>
+    help: "<%= props['help'] %>"
+    <%- end -%>
+    <%- if props.key?('required') -%>
+    required: <%= props['required'] %>
+    <%- end -%>
+    cacheable: false
+    <%- end -%>
+  <%- end -%>
+  json_bridge:
+    widget: "hidden_field"
+    value: '<%= advanced_args_ids %>'
+    cacheable: false
+
+form:
+ - modules
+ - partition
+ - custom_qos
+<%- base_options_data.each do |key, props| -%>
+ - <%= key %>
+ <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') -%>
+ <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
+ <%- if not opt_props["arguments"].empty? -%>
+ - show_advanced_<%= key %>_<%= opt %>
+ <%- end -%>
+ <%- opt_props["arguments"].each do |arg_key, arg_widget| %>
+ - <%= key %>_<%= opt %>_<%= arg_key %>
+ <%- end -%>
+ <%- end -%>
+ <%- end -%>
+<%- end -%>
+ - json_bridge

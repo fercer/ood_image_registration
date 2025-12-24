@@ -28,30 +28,46 @@ CODEC="<%= context.output_codec %>"
 QUALITY="<%= context.output_codec_quality %>"
 OUTPUT_DIR="<%= context.output_dir %>"
 
-if [ ! -d "$OUTPUT_DIR" ]; then
+if [ "${OUTPUT_DIR}" == "" ]; then
+    echo "The output directory was not defined. It will be set to the home directory '${HOME}'."
+    OUTPUT_DIR="${HOME}"
+fi
+if [ ! -d "${OUTPUT_DIR}" ]; then
+    echo "The output directory '${OUTPUT_DIR}' does not exist and will be created."
     mkdir -p "${OUTPUT_DIR}"
 fi
 
-if [ ! -d "$TEMP_DIR" ]; then
+# Check whether the directory was created successfully or not
+if [ ! -d "${OUTPUT_DIR}" ]; then
+    echo "Could not find output directory '${OUTPUT_DIR}'."
+    exit 1
+fi
+
+if [ "${TEMP_DIR}" == "" ]; then
+    echo "The temporary directory was not defined. It will be set to the same output directory '${OUTPUT_DIR}'."
+    TEMP_DIR=${OUTPUT_DIR}
+fi
+if [ ! -d "${TEMP_DIR}" ]; then
+    echo "The temporary directory '${TEMP_DIR}' does not exist and will be created."
     mkdir -p "${TEMP_DIR}"
 fi
 
-# Check if the directory was created successfully or not
-if [ ! -d "$TEMP_DIR" ]; then
-    echo "Could not create temporary file at ${TEMP_DIR}"
+# Check whether the directory was created successfully or not
+if [ ! -d "${TEMP_DIR}" ]; then
+    echo "Could not find temporary directory '${TEMP_DIR}'."
     exit 1
 fi
 
 REFERENCE_FILENAME="<%= context.reference_image %>"
-REGISTERING_FILENAME="<%= context.input_image %>"
+INPUT_FILENAME="<%= context.input_image %>"
 
 if [ ! -f "$REFERENCE_FILENAME" ]; then
     echo "Could not find reference image '${REFERENCE_FILENAME}'"
     exit 1
 fi
 
-if [ ! -f "$REGISTERING_FILENAME" ]; then
-    echo "Could not find input image '${REGISTERING_FILENAME}'"
+if [ ! -f "$INPUT_FILENAME" ]; then
+    echo "Could not find input image '${INPUT_FILENAME}'"
     exit 1
 fi
 
@@ -75,54 +91,66 @@ if [ ! -f "$BF_FORMAT_F" ]; then
     touch $BF_FORMAT_F
 fi
 
-# Determine the image preprocessor and reader required for the reference image
-REFERENCE_SHOWINF=$(singularity exec ${BFTOOLS_CONTAINER} /opt/bftools/showinf -no-upgrade -nopix ${REFERENCE_FILENAME})
-REFERENCE_SizeZ=($(echo "${REFERENCE_SHOWINF}" | grep "SizeZ" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
-REFERENCE_SizeC=($(echo "${REFERENCE_SHOWINF}" | grep "SizeC" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
+# Get the readers and preprocessors for the reference and input images
+<%-
+require 'json'
 
-if [[ $REFERENCE_SizeC == 3 ]]; then
-    REFERENCE_PREPROCESSOR=":HEDeconvolution"
-else
-    REFERENCE_PREPROCESSOR=":ChannelGetter"
-fi
+image_modes = {
+    "reference" => "r",
+    "input" => "i"
+}
 
-if [[ $REFERENCE_SizeZ -gt 1 ]]; then
-    MID_Z=$((REFERENCE_SizeZ / 2))
-    REFERENCE_READER=":bioformats-Z:${MID_Z}"
-elif [[ $REFERENCE_FILENAME == *".ome.tif"* ]]; then
-    REFERENCE_READER=":bioformats"
-else
-    REFERENCE_READER=""
-fi
+advanced_options_keys = {
+    "preprocessor" => "p",
+    "reader" => "r"
+}
+    
+context_dict = context.to_h
+widget_types = JSON.parse(context.json_bridge)
 
-REFERENCE_ARGS="${REFERENCE_FILENAME}${REFERENCE_PREPROCESSOR}${REFERENCE_READER}"
+prefix = "batch_connect_session_context_"
 
-# Determine the image preprocessor and reader required for each image according to the modality
-REG_SHOWINF=$(singularity exec ${BFTOOLS_CONTAINER} /opt/bftools/showinf -no-upgrade -nopix ${REGISTERING_FILENAME})
-REG_SizeZ=($(echo "${REG_SHOWINF}" | grep "SizeZ" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
-REG_SizeC=($(echo "${REG_SHOWINF}" | grep "SizeC" | cut -d'=' -f2 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'))
+advanced_options = {}
 
-if [[ $REG_SizeC == 3 ]]; then
-    REG_PREPROCESSOR=":HEDeconvolution"
-else
-    REG_PREPROCESSOR=":ChannelGetter"
-fi
+selected_option = ""
+widget_arguments = {}
 
-if [[ $REG_SizeZ -gt 1 ]]; then
-    MID_Z=$((REG_SizeZ / 2))
-    REG_READER=":bioformats-Z:${MID_Z}"
-elif [[ "$REFERENCE_FILENAME" == *".ome.tif"* ]]; then
-    REG_READER=":bioformats"
-else
-    REG_READER=""
-fi
+image_modes.each do |img_mode,img_mode_flag|
+    advanced_options_keys.each do |opt_key,opt_key_flag|
+        selected_option = context_dict["#{img_mode}_image_#{opt_key}".to_sym]
+        widget_arguments = widget_types["#{prefix}#{img_mode}_image_#{opt_key}"][selected_option]["widget_arguments"]
 
-REG_ARGS="${REGISTERING_FILENAME}${REG_PREPROCESSOR}${REG_READER}"
+        args_list = []
+
+        widget_arguments.each do |arg_key,arg_type|
+            arg_key = arg_key.to_s.gsub(prefix, "")
+            arg_value = context_dict[arg_key.to_sym]
+
+            if arg_type.include?('bool') 
+                if args_list == "1"
+                    args_list << "#{arg_key.gsub("#{img_mode}_image_#{opt_key}_#{selected_option.downcase}_", "--#{img_mode_flag}#{opt_key_flag}-")}"
+                end
+            else
+                args_list << "#{arg_key.gsub("#{img_mode}_image_#{opt_key}_#{selected_option.downcase}_", "--#{img_mode_flag}#{opt_key_flag}-")} #{arg_value}"
+            end
+        end
+
+        advanced_options["#{img_mode}_image_#{opt_key}"] = args_list.join(" ")
+    end
+end
+-%>
 
 # Execute registration pipeline ----------------------------------------------------------------
 command="singularity run -B ${BF_FORMAT_F}:/root/.local/lib/python3.12/site-packages/valis/data/bf_formats.txt ${VALIS_CONTAINER}\
- -s ${REFERENCE_BASENAME} -o ${TEMP_DIR} -d ${OUTPUT_DIR}\
- -i ${REFERENCE_ARGS} ${REG_ARGS}\
+ -s ${REFERENCE_BASENAME} -t ${TEMP_DIR} -o ${OUTPUT_DIR}\
+ -r ${REFERENCE_FILENAME}\
+ -i ${INPUT_FILENAME}\
+<%- image_modes.each do |img_mode,img_mode_flag| -%>
+<%- advanced_options_keys.each do |opt_key,opt_key_flag| -%>
+ -<%= img_mode_flag %><%= opt_key_flag %> <%= context_dict["#{img_mode}_image_#{opt_key}".to_sym] %>\
+ <%= advanced_options["#{img_mode}_image_#{opt_key}"] %> \
+<%- end -%>
+<%- end -%>
  -mp ${PROCESSING_SIZE}\
  -c ${CODEC} -cq ${QUALITY}\
  -y"

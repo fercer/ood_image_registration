@@ -1,0 +1,110 @@
+{
+    "num_cores": {
+        "widget": "number_field",
+        "label": "Number of cores",
+        "value": 16,
+        "help": "The image registration process has been tested with 16 cores only.",
+        "min": 8,
+        "max": 64,
+        "step": 8
+    },
+    "bc_num_hours": {
+        "widget": "number_field",
+        "label": "Number of hours",
+        "value": 1,
+        "min": 1,
+        "max": 2,
+        "step": 1,
+        "help": "The image registration process usually takes less than an hour; however, this depends on the size of the image."
+    },
+    "memtask": {
+        "widget": "select",
+        "label": "Memory (in GB)",
+        "options": [
+            "256GB",
+            "512GB"
+        ],
+        "help": "The image registration requires at least 256 GB mainly for the image generation step after alignment."
+    },
+    "reference_image":{
+        "widget": "path_selector",
+        "show_hidden": false,
+        "show_files": true,
+        "required": true,
+        "help": "The reference image that the input image will be registered towards to."
+    },
+    "reference_image_reader":{
+        "widget": "reader",
+        "label": "Reference image reader",
+        "help": "The reference image will be read using this class. More info here: https://valis.readthedocs.io/en/latest/slide_io.html#imagereader."
+    },
+    "reference_image_preprocessor":{
+        "widget": "preprocessor",
+        "label": "Reference image pre-processor",
+        "help": "The reference image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html#classes."
+    },
+    "input_image": {
+        "widget": "path_selector",
+        "show_hidden": false,
+        "show_files": true,
+        "required": true,
+        "help": "This image will be registered towards the reference image."
+    },
+    "input_image_reader":{
+        "widget": "reader",
+        "label": "Input image reader",
+        "help": "The input image will be read using this class. More info here: https://valis.readthedocs.io/en/latest/slide_io.html#imagereader."
+    },
+    "input_image_preprocessor":{
+        "widget": "preprocessor",
+        "label": "Input image pre-processor",
+        "help": "The input image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html#classes."
+    },
+    "output_dir": {
+        "widget": "path_selector",
+        "show_hidden": false,
+        "show_files": false
+    },
+    "temp_dir": {
+        "widget": "path_selector",
+        "show_hidden": false,
+        "show_files": true
+    },
+    "processing_size": {
+        "widget": "select",
+        "label": "Processing size",
+        "options": [
+            8196,
+            4096,
+            2048,
+            1024,
+            512
+        ],
+        "help": "Size at which the registration process is applied. The image is resized to have its largest side equal to the selected processing size. Highest registration performance requires at least the 8196 size setting."
+    },
+    "output_codec": {
+        "widget": "select",
+        "label": "Compression codec",
+        "options": [
+                "jp2k",
+                "jpeg",
+                "zstd",
+                "webp",
+                "lzw",
+                "ccittfax4",
+                "packbits",
+                "deflate",
+                "none"
+        ],
+        "help": "Codec used to compress the output .tif image"
+    },
+    "output_codec_quality":{
+        "widget": "number_field",
+        "label": "Compression codec quality",
+        "value": 100,
+        "min": 1,
+        "max": 100,
+        "step": 1,
+        "help": "The quality to be preserver after compressing the image with the selected codec. For loss-less compression set it to 100."
+    }
+}

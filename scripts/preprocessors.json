@@ -1,0 +1,179 @@
+{
+    "Gray": {
+        "description": "Convert a color image into a gray-scale image.",
+        "arguments": {}
+    },
+    "ChannelGetter": {
+        "description": "Select a single channel in a multichannel image",
+        "arguments": {
+            "channel": {
+                "widget": "text_field",
+                "label": "Reference channel",
+                "value": "dapi",
+                "help": "Set the name of the channel that is used for registration. The rest of the channels will be registered using the transformations computed from this reference channel.",
+                "type": "str_int"
+            }, "adaptive_eq": {
+                "widget": "check_box",
+                "label": "Apply adaptive histogram equalization",
+                "value": 1,
+                "type": "bool"
+            }, "invert": {
+                "widget": "check_box",
+                "label": "Invert intensity",
+                "value": 0,
+                "type": "bool"
+            }
+        }
+    },
+    "ColorfulStandardizer": {
+        "description": "Standardize the colorfulness of the image",
+        "arguments": {
+            "c": {
+                "widget": "number_field",
+                "label": "Colorfulness value used to standardize the color and hue of the image",
+                "value": 0.20,
+                "min": 0.01,
+                "max": 1.00,
+                "step": 0.01,
+                "type": "float"
+            },
+            "invert": {
+                "widget": "check_box",
+                "label": "Invert intensity",
+                "value": 1,
+                "type": "bool"
+            }, "adaptive_eq": {
+                "widget": "check_box",
+                "label": "Apply adaptive histogram equalization",
+                "value": 0,
+                "type": "bool"
+            }
+        }
+    },
+    "OD": {
+        "description": "Convert the image from RGB to optical density (OD) and calculate pixel norms",
+        "arguments": {
+            "adaptive_eq": {
+                "widget": "check_box",
+                "label": "Apply adaptive histogram equalization",
+                "value": 0,
+                "type": "bool"
+            },
+            "p": {
+                "widget": "number_field",
+                "label": "Percentile of the pixel norms used for the conversion",
+                "value": 0.95,
+                "min": 0.01,
+                "max": 0.99,
+                "step": 0.01,
+                "type": "float"
+            }
+        }
+    },
+    "StainFlattener": {
+        "description": "Stain flattener",
+        "arguments": {
+            "n_colors": {
+                "widget": "number_field",
+                "label": "Number of colors to use for deconvolution",
+                "value": 100,
+                "min": -1,
+                "step": 1,
+                "help": "If set to `-1`, the number of colors will be estimated using the K-means (elbow method).",
+                "type": "int"
+            },
+            "q": {
+                "widget": "number_field",
+                "label": "Percentile of the deconvolved values used for flattening",
+                "value": 0.95,
+                "min": 0.01,
+                "max": 0.99,
+                "step": 0.01,
+                "type": "float"
+            },
+            "with_mask": {
+                "widget": "check_box",
+                "label": "Compute tissue mask",
+                "value": 1,
+                "help": "Compute stain flattening parameters on tissue-only pixels while avoiding background pixels.",
+                "type": "bool"
+            },
+            "adaptive_eq": {
+                "widget": "check_box",
+                "label": "Apply adaptive histogram equalization",
+                "value": 1,
+                "type": "bool"
+            },
+            "max_colors": {
+                "widget": "number_field",
+                "label": "Number of colors clusters",
+                "value": 100,
+                "min": -1,
+                "step": 1,
+                "help": "If the number of colors is set to `-1`, this value sets the maximum number of color clusters computed with K-means.",
+                "type": "int"
+            }
+        }
+    },
+    "BgColorDistance": {
+        "description": "Calculate distance between each pixel and the background color",
+        "arguments": {
+            "brightness_q": {
+                "widget": "number_field",
+                "label": "Brightness quantile used as threshold",
+                "value": 0.99,
+                "min": 0.01,
+                "max": 0.99,
+                "step": 0.01,
+                "type": "float"
+            }
+        }
+    },
+    "Luminosity": {
+        "description": "Get luminosity of an RGB image",
+        "arguments": {}
+    },
+    "HEDeconvolution": {
+        "description": "Normalize staining appearance of hematoxylin and eosin (H&E) stained image and get the H or E deconvolution image",
+        "arguments": {
+            "stain": {
+                "widget": "select",
+                "label": "Stain channel used as reference for deconvolution",
+                "options": [
+                    "hem",
+                    "eos"
+                ],
+                "type": "str"
+            },
+            "Io": {
+                "widget": "number_field",
+                "label": "The transmitted light intensity",
+                "value": 240,
+                "min": 1,
+                "step": 1,
+                "help": "The default value is 240",
+                "type": "int"
+            },
+            "alpha": {
+                "widget": "number_field",
+                "value": 1,
+                "max": 99,
+                "min": 1,
+                "step": 1,
+                "label": "Alpha(th) percentile used for approximation of the intensity histogram min and max values",
+                "help": "The default value, found empirically, is `1`",
+                "type": "int"
+            },
+            "beta": {
+                "widget": "number_field",
+                "value": 0.15,
+                "max": 0.99,
+                "min": 0.01,
+                "step": 0.01,
+                "label": "Threshold value used to remove the pixels with a low OD for stability reasons",
+                "help": "The default value, found empirically, is `0.15`",
+                "type": "float"
+            }
+        }
+    }
+}
