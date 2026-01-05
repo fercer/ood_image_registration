@@ -5,6 +5,7 @@
   base_json_path = Pathname.new(__dir__).join("form/base_options.json")
   preprocessors_json_path = Pathname.new(__dir__).join("scripts/preprocessors.json")
   readers_json_path = Pathname.new(__dir__).join("scripts/readers.json")
+  feature_detectors_json_path = Pathname.new(__dir__).join("scripts/feature_detectors.json")
 
   # Default to empty if file is missing (error handling)
   if File.exist?(base_json_path)
@@ -15,8 +16,10 @@
 
   custom_options_data = {
     "preprocessor" => {},
-    "reader" => {}
+    "reader" => {},
+    "feature_detector" => {}
   }
+  
   if File.exist?(preprocessors_json_path)
     custom_options_data["preprocessor"] = JSON.parse(File.read(preprocessors_json_path))
   end
@@ -25,13 +28,17 @@
     custom_options_data["reader"] = JSON.parse(File.read(readers_json_path))
   end
 
+  if File.exist?(feature_detectors_json_path)
+    custom_options_data["feature_detector"] = JSON.parse(File.read(feature_detectors_json_path))
+  end
+
   # OOD prefixes all attributes with this string
   prefix = "batch_connect_session_context_"
   
   advanced_args_ids = {}
 
   base_options_data.each do |key, props|
-    if props['widget'].include?('preprocessor') || props['widget'].include?('reader')
+    if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector')
       advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"] = {}
 
       custom_options_data[props['widget']].each do |opt, opt_props|
@@ -44,7 +51,6 @@
           advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt]["widget_arguments"]["#{prefix}#{key.gsub('-', '_')}_#{opt.downcase}_#{arg_key.downcase.gsub('-', '_')}"] = arg_widget['type']
         end
       end
-    end
   end
   
   advanced_args_ids = advanced_args_ids.to_json
@@ -80,7 +86,7 @@ attributes:
   # 4. Programmatically Generate Base Attributes from JSON
   <%- base_options_data.each do |key, props| -%>
   <%= key %>:
-  <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') -%>
+  <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') -%>
     widget: select
     label: "<%= props['label'] %>"
     options:
@@ -182,7 +188,7 @@ form:
  - custom_qos
 <%- base_options_data.each do |key, props| -%>
  - <%= key %>
- <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') -%>
+ <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') -%>
  <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
  <%- if not opt_props["arguments"].empty? -%>
  - show_advanced_<%= key %>_<%= opt %>

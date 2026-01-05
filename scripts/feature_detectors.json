@@ -1,0 +1,88 @@
+{
+    "DiskFD": {
+        "description": "DISK feature detector and descriptor, implemented in Kornia.",
+        "arguments": {
+            "num_features": {
+                "widget": "number_field",
+                "label": "Number of detected features",
+                "value": 7500,
+                "min": 1,
+                "step": 1,
+                "type": "int"
+            }
+        }
+    },
+    "DeDoDeFD": {
+        "description": "DeDoDe feature detector and descriptor, implemented in Kornia.",
+        "arguments": {
+            "num_features": {
+                "widget": "number_field",
+                "label": "Number of detected features",
+                "value": 7500,
+                "min": 1,
+                "step": 1,
+                "type": "int"
+            }
+        }
+    },
+    "BriskFD": {
+        "description": "Uses BRISK for feature detection and description.",
+        "arguments": {}
+    },
+    "KazeFD": {
+        "description": "Uses KAZE for feature detection and description.",
+        "arguments": {}
+    },
+    "AkazeFD": {
+        "description": "Uses AKAZE for feature detection and description.",
+        "arguments": {}
+    },
+    "DaisyFD": {
+        "description": "Uses BRISK for feature detection and DAISY for feature description.",
+        "arguments": {}
+    },
+    "LatchFD": {
+        "description": "Uses BRISK for feature detection and LATCH for feature description.",
+        "arguments": {}
+    },
+    "BoostFD": {
+        "description": "Uses BRISK for feature detection and Boost for feature description.",
+        "arguments": {}
+    },
+    "VggFD": {
+        "description": "Uses BRISK for feature detection and VGG for feature description.",
+        "arguments": {}
+    },
+    "OrbVggFD": {
+        "description": "Uses ORB for feature detection and VGG for feature description.",
+        "arguments": {}
+    },
+    "SuperPointFD": {
+        "description": "Use SuperPoint to detect and describe features (detect_and_compute) Adapted from https://github.com/magicleap/SuperGluePretrainedNetwork/blob/master/match_pairs.py.",
+        "arguments": {
+            "keypoint_threshold": {
+                "widget": "number_field",
+                "label": " SuperPoint keypoint detector confidence threshold",
+                "value": 0.0050,
+                "min": 0.0001,
+                "max": 0.9999,
+                "step": 0.0001,
+                "type": "float"
+            },
+            "nms_radius": {
+                "widget": "number_field",
+                "label": "SuperPoint Non Maximum Suppression (NMS) radius (must be positive)",
+                "value": 4,
+                "min": 1,
+                "step": 1,
+                "type": "int"
+            },
+            "force_cpu ": {
+                "widget": "check_box",
+                "label": "Force pytorch to run in CPU mode",
+                "value": 0,
+                "type": "bool"
+            }
+        }
+    }
+}
