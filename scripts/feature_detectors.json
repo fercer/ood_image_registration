@@ -8,7 +8,8 @@
                 "value": 7500,
                 "min": 1,
                 "step": 1,
-                "type": "int"
+                "type": "int",
+                "help": "Default value is `7500`."
             }
         }
     },
@@ -21,7 +22,8 @@
                 "value": 7500,
                 "min": 1,
                 "step": 1,
-                "type": "int"
+                "type": "int",
+                "help": "Default value is `7500`."
             }
         }
     },
@@ -56,33 +58,5 @@
     "OrbVggFD": {
         "description": "Uses ORB for feature detection and VGG for feature description.",
         "arguments": {}
-    },
-    "SuperPointFD": {
-        "description": "Use SuperPoint to detect and describe features (detect_and_compute) Adapted from https://github.com/magicleap/SuperGluePretrainedNetwork/blob/master/match_pairs.py.",
-        "arguments": {
-            "keypoint_threshold": {
-                "widget": "number_field",
-                "label": " SuperPoint keypoint detector confidence threshold",
-                "value": 0.0050,
-                "min": 0.0001,
-                "max": 0.9999,
-                "step": 0.0001,
-                "type": "float"
-            },
-            "nms_radius": {
-                "widget": "number_field",
-                "label": "SuperPoint Non Maximum Suppression (NMS) radius (must be positive)",
-                "value": 4,
-                "min": 1,
-                "step": 1,
-                "type": "int"
-            },
-            "force_cpu ": {
-                "widget": "check_box",
-                "label": "Force pytorch to run in CPU mode",
-                "value": 0,
-                "type": "bool"
-            }
-        }
     }
 }

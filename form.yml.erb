@@ -3,9 +3,13 @@
   
   # 1. Load the JSON file
   base_json_path = Pathname.new(__dir__).join("form/base_options.json")
-  preprocessors_json_path = Pathname.new(__dir__).join("scripts/preprocessors.json")
-  readers_json_path = Pathname.new(__dir__).join("scripts/readers.json")
-  feature_detectors_json_path = Pathname.new(__dir__).join("scripts/feature_detectors.json")
+  advanced_json_paths = {
+    "preprocessor" => Pathname.new(__dir__).join("scripts/preprocessors.json"),
+    "reader" => Pathname.new(__dir__).join("scripts/readers.json"),
+    "feature_detector" => Pathname.new(__dir__).join("scripts/feature_detectors.json"),
+    "affine_transformer" => Pathname.new(__dir__).join("scripts/affine_transformers.json"),
+    "affine_optimizer" => Pathname.new(__dir__).join("scripts/affine_optimizers.json")
+  }
 
   # Default to empty if file is missing (error handling)
   if File.exist?(base_json_path)
@@ -17,19 +21,15 @@
   custom_options_data = {
     "preprocessor" => {},
     "reader" => {},
-    "feature_detector" => {}
+    "feature_detector" => {},
+    "affine_transformer" => {},
+    "affine_optimizer" => {}
   }
   
-  if File.exist?(preprocessors_json_path)
-    custom_options_data["preprocessor"] = JSON.parse(File.read(preprocessors_json_path))
-  end
-
-  if File.exist?(readers_json_path)
-    custom_options_data["reader"] = JSON.parse(File.read(readers_json_path))
-  end
-
-  if File.exist?(feature_detectors_json_path)
-    custom_options_data["feature_detector"] = JSON.parse(File.read(feature_detectors_json_path))
+  advanced_json_paths.each do |opt, opt_path|
+    if File.exist?(opt_path)
+      custom_options_data[opt] = JSON.parse(File.read(opt_path))
+    end
   end
 
   # OOD prefixes all attributes with this string
