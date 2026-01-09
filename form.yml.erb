@@ -38,7 +38,7 @@
   advanced_args_ids = {}
 
   base_options_data.each do |key, props|
-    if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector')
+    if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') || props['widget'].include?('affine_transformer') || props['widget'].include?('affine_optimizer')
       advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"] = {}
 
       custom_options_data[props['widget']].each do |opt, opt_props|
@@ -51,6 +51,7 @@
           advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt]["widget_arguments"]["#{prefix}#{key.gsub('-', '_')}_#{opt.downcase}_#{arg_key.downcase.gsub('-', '_')}"] = arg_widget['type']
         end
       end
+    end
   end
   
   advanced_args_ids = advanced_args_ids.to_json
@@ -86,7 +87,7 @@ attributes:
   # 4. Programmatically Generate Base Attributes from JSON
   <%- base_options_data.each do |key, props| -%>
   <%= key %>:
-  <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') -%>
+  <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') || props['widget'].include?('affine_transformer') || props['widget'].include?('affine_optimizer') -%>
     widget: select
     label: "<%= props['label'] %>"
     options:
@@ -188,7 +189,7 @@ form:
  - custom_qos
 <%- base_options_data.each do |key, props| -%>
  - <%= key %>
- <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') -%>
+ <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') || props['widget'].include?('affine_transformer') || props['widget'].include?('affine_optimizer') -%>
  <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
  <%- if not opt_props["arguments"].empty? -%>
  - show_advanced_<%= key %>_<%= opt %>

@@ -95,14 +95,38 @@ fi
 <%-
 require 'json'
 
-image_modes = {
-    "reference" => "r",
-    "input" => "i"
-}
-
-advanced_options_keys = {
-    "preprocessor" => "p",
-    "reader" => "r"
+mode_pairs = {
+    "image_options" => {
+        "modes" => {
+            "reference" => "r",
+            "input" => "i"
+        },
+        "options" => {
+            "preprocessor" => "p",
+            "reader" => "r"
+        },
+        "suffix" => "_image_"
+    },
+    "feature_detectors_options" => {
+        "modes" => {
+            "sorting" => "s",
+            "matching" => "m"
+        },
+        "options" => {
+            "feature_detector" => "fd"
+        },
+        "suffix" => "_"
+    },
+    "registration_options" => {
+        "modes" => {
+            "affine" => "a"
+        },
+        "options" => {
+            "optimizer" => "o",
+            "transformer" => "t"
+        },
+        "suffix" => "_"
+    }
 }
 
 context_dict = context.to_h
@@ -112,30 +136,35 @@ prefix = "batch_connect_session_context_"
 
 advanced_options = {}
 
-selected_option = ""
-widget_arguments = {}
+mode_pairs.each do |advanced_option,advanced_option_modes|
+    mode_suffix = advanced_option_modes["suffix"]
+    advanced_option_modes["modes"].each do |mode_key,mode_flag|
+        advanced_option_modes["options"].each do |opt_key,opt_key_flag|
+            selected_option_name = context_dict["#{mode_key}#{mode_suffix}#{opt_key}".to_sym]
+            selected_option = widget_types["#{prefix}#{mode_key}#{mode_suffix}#{opt_key}"][selected_option_name]
 
-image_modes.each do |img_mode,img_mode_flag|
-    advanced_options_keys.each do |opt_key,opt_key_flag|
-        selected_option = context_dict["#{img_mode}_image_#{opt_key}".to_sym]
-        widget_arguments = widget_types["#{prefix}#{img_mode}_image_#{opt_key}"][selected_option]["widget_arguments"]
+            if selected_option.key?('widget_arguments')
+                widget_arguments = selected_option["widget_arguments"]
+                args_list = []
 
-        args_list = []
-
-        widget_arguments.each do |arg_key,arg_type|
-            arg_key = arg_key.to_s.gsub(prefix, "")
-            arg_value = context_dict[arg_key.to_sym]
-
-            if arg_type.include?('bool') 
-                if args_list == "1"
-                    args_list << "#{arg_key.gsub("#{img_mode}_image_#{opt_key}_#{selected_option.downcase}_", "--#{img_mode_flag}#{opt_key_flag}-")}"
+                widget_arguments.each do |arg_key,arg_type|
+                    arg_key = arg_key.to_s.gsub(prefix, "")
+                    if context_dict.key?(arg_key.to_sym)
+                        arg_value = context_dict[arg_key.to_sym]
+    
+                        if arg_type.include?('bool') 
+                            if arg_value == "1"
+                                args_list << "#{arg_key.gsub("#{mode_key}#{mode_suffix}#{opt_key}_#{selected_option_name.downcase}_", "--#{mode_flag}#{opt_key_flag}-")}"
+                            end
+                        else
+                            args_list << "#{arg_key.gsub("#{mode_key}#{mode_suffix}#{opt_key}_#{selected_option_name.downcase}_", "--#{mode_flag}#{opt_key_flag}-")} #{arg_value}"
+                        end
+                    end
                 end
-            else
-                args_list << "#{arg_key.gsub("#{img_mode}_image_#{opt_key}_#{selected_option.downcase}_", "--#{img_mode_flag}#{opt_key_flag}-")} #{arg_value}"
+        
+                advanced_options["#{mode_key}#{mode_suffix}#{opt_key}"] = args_list.join(" ")
             end
         end
-
-        advanced_options["#{img_mode}_image_#{opt_key}"] = args_list.join(" ")
     end
 end
 -%>
@@ -145,10 +174,13 @@ command="singularity run -B ${BF_FORMAT_F}:/root/.local/lib/python3.12/site-pack
  -s ${REFERENCE_BASENAME} -t ${TEMP_DIR} -o ${OUTPUT_DIR}\
  -r ${REFERENCE_FILENAME}\
  -i ${INPUT_FILENAME}\
-<%- image_modes.each do |img_mode,img_mode_flag| -%>
-<%- advanced_options_keys.each do |opt_key,opt_key_flag| -%>
- -<%= img_mode_flag %><%= opt_key_flag %> <%= context_dict["#{img_mode}_image_#{opt_key}".to_sym] %>\
- <%= advanced_options["#{img_mode}_image_#{opt_key}"] %> \
+<%- mode_pairs.each do |advanced_option,advanced_option_modes|-%>
+<%- mode_suffix = advanced_option_modes["suffix"] -%>
+<%- advanced_option_modes["modes"].each do |mode_key,mode_flag| -%>
+<%- advanced_option_modes["options"].each do |opt_key,opt_key_flag| -%>
+ -<%= mode_flag %><%= opt_key_flag %> <%= context_dict["#{mode_key}#{mode_suffix}#{opt_key}".to_sym] %>\
+ <%= advanced_options["#{mode_key}#{mode_suffix}#{opt_key}"] %> \
+<%- end -%>
 <%- end -%>
 <%- end -%>
  -mp ${PROCESSING_SIZE}\

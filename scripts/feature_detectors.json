@@ -28,35 +28,35 @@
         }
     },
     "BriskFD": {
-        "description": "Uses BRISK for feature detection and description.",
+        "description": "BRISK for feature detection and description.",
         "arguments": {}
     },
     "KazeFD": {
-        "description": "Uses KAZE for feature detection and description.",
+        "description": "KAZE for feature detection and description.",
         "arguments": {}
     },
     "AkazeFD": {
-        "description": "Uses AKAZE for feature detection and description.",
+        "description": "AKAZE for feature detection and description.",
         "arguments": {}
     },
     "DaisyFD": {
-        "description": "Uses BRISK for feature detection and DAISY for feature description.",
+        "description": "BRISK for feature detection and DAISY for feature description.",
         "arguments": {}
     },
     "LatchFD": {
-        "description": "Uses BRISK for feature detection and LATCH for feature description.",
+        "description": "BRISK for feature detection and LATCH for feature description.",
         "arguments": {}
     },
     "BoostFD": {
-        "description": "Uses BRISK for feature detection and Boost for feature description.",
+        "description": "BRISK for feature detection and Boost for feature description.",
         "arguments": {}
     },
     "VggFD": {
-        "description": "Uses BRISK for feature detection and VGG for feature description.",
+        "description": "BRISK for feature detection and VGG for feature description.",
         "arguments": {}
     },
     "OrbVggFD": {
-        "description": "Uses ORB for feature detection and VGG for feature description.",
+        "description": "ORB for feature detection and VGG for feature description.",
         "arguments": {}
     }
 }
