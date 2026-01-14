@@ -130,40 +130,32 @@ mode_pairs = {
 }
 
 context_dict = context.to_h
-widget_types = JSON.parse(context.json_bridge)
-
-prefix = "batch_connect_session_context_"
+widget_types = JSON.parse(context.json_bridge_type)
 
 advanced_options = {}
 
-mode_pairs.each do |advanced_option,advanced_option_modes|
+mode_pairs.each do |advanced_option, advanced_option_modes|
     mode_suffix = advanced_option_modes["suffix"]
-    advanced_option_modes["modes"].each do |mode_key,mode_flag|
-        advanced_option_modes["options"].each do |opt_key,opt_key_flag|
-            selected_option_name = context_dict["#{mode_key}#{mode_suffix}#{opt_key}".to_sym]
-            selected_option = widget_types["#{prefix}#{mode_key}#{mode_suffix}#{opt_key}"][selected_option_name]
+    advanced_option_modes["modes"].each do |mode_key, mode_flag|
+        advanced_option_modes["options"].each do |opt_key, opt_key_flag|
+            selected_option_name = context_dict["#{mode_key}#{mode_suffix}#{opt_key}".to_sym].downcase
 
-            if selected_option.key?('widget_arguments')
-                widget_arguments = selected_option["widget_arguments"]
-                args_list = []
+            widget_arguments = widget_types.select { |key, value| key.to_s.start_with?("#{mode_key}#{mode_suffix}#{opt_key}_#{selected_option_name}_") }
 
-                widget_arguments.each do |arg_key,arg_type|
-                    arg_key = arg_key.to_s.gsub(prefix, "")
-                    if context_dict.key?(arg_key.to_sym)
-                        arg_value = context_dict[arg_key.to_sym]
-    
-                        if arg_type.include?('bool') 
-                            if arg_value == "1"
-                                args_list << "#{arg_key.gsub("#{mode_key}#{mode_suffix}#{opt_key}_#{selected_option_name.downcase}_", "--#{mode_flag}#{opt_key_flag}-")}"
-                            end
-                        else
-                            args_list << "#{arg_key.gsub("#{mode_key}#{mode_suffix}#{opt_key}_#{selected_option_name.downcase}_", "--#{mode_flag}#{opt_key_flag}-")} #{arg_value}"
-                        end
+            args_list = []
+
+            widget_arguments.each do |arg_key, arg_type|
+                arg_value = context_dict[arg_key.to_sym]
+                if arg_type.include?('bool')
+                    if arg_value == "1"
+                        args_list << "#{arg_key.gsub("#{mode_key}#{mode_suffix}#{opt_key}_#{selected_option_name}_", "--#{mode_flag}#{opt_key_flag}-")}"
                     end
+                else
+                    args_list << "#{arg_key.gsub("#{mode_key}#{mode_suffix}#{opt_key}_#{selected_option_name}_", "--#{mode_flag}#{opt_key_flag}-")} #{arg_value}"
                 end
-        
-                advanced_options["#{mode_key}#{mode_suffix}#{opt_key}"] = args_list.join(" ")
             end
+
+            advanced_options["#{mode_key}#{mode_suffix}#{opt_key}"] = args_list.join(" ")
         end
     end
 end
