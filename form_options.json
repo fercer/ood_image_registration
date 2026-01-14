@@ -1,0 +1,167 @@
+{
+    "job_options": {
+        "label": "SLURM Job options",
+        "group": {
+            "num_cores": {
+                "widget": "number_field",
+                "label": "Number of cores",
+                "value": 16,
+                "help": "The image registration process has been tested with 16 cores only.",
+                "min": 8,
+                "max": 64,
+                "step": 8
+            },
+            "bc_num_hours": {
+                "widget": "number_field",
+                "label": "Number of hours",
+                "value": 1,
+                "min": 1,
+                "max": 2,
+                "step": 1,
+                "help": "The image registration process usually takes less than an hour; however, this depends on the size of the image."
+            },
+            "memtask": {
+                "widget": "select",
+                "label": "Memory (in GB)",
+                "options": [
+                    "256GB",
+                    "512GB"
+                ],
+                "help": "The image registration requires at least 256 GB mainly for the image generation step after alignment."
+            }
+        },
+        "visible": true
+    },
+    "reference_image": {
+        "widget": "path_selector",
+        "show_hidden": false,
+        "show_files": true,
+        "required": true,
+        "help": "The reference image that the input image will be registered towards to (fixed)."
+    },
+    "reference_image_options": {
+        "label": "Reference image options",
+        "group": {
+            "reference_image_reader": {
+                "widget": "readers",
+                "label": "Reference image reader",
+                "help": "The reference image will be read using this class. More info here: https://valis.readthedocs.io/en/latest/slide_io.html#imagereader."
+            },
+            "reference_image_preprocessor": {
+                "widget": "preprocessors",
+                "label": "Reference image pre-processor",
+                "help": "The reference image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html#classes."
+            }
+        },
+        "visible": false
+    },
+    "input_image": {
+        "widget": "path_selector",
+        "show_hidden": false,
+        "show_files": true,
+        "required": true,
+        "help": "This image will be registered towards the reference image (moving)."
+    },
+    "input_image_options": {
+        "label": "Input image options",
+        "group": {
+            "input_image_reader": {
+                "widget": "readers",
+                "label": "Input image reader",
+                "help": "The input image will be read using this class. More info here: https://valis.readthedocs.io/en/latest/slide_io.html#imagereader."
+            },
+            "input_image_preprocessor": {
+                "widget": "preprocessors",
+                "label": "Input image pre-processor",
+                "help": "The input image will be pre-processed using this class. More info here: https://valis.readthedocs.io/en/stable/preprocessing.html#classes."
+            }
+        },
+        "visible": false
+    },
+    "registration_options": {
+        "label": "Registration options",
+        "group": {
+            "create_masks": {
+                "widget": "check_box",
+                "label": "Create tissue masks",
+                "value": 1,
+                "help": "Whether or not to create and apply masks for registration. Can help focus alignment on the tissue, but can sometimes mask too much if there is a lot of variation in the image.",
+                "type": "bool"
+            },
+            "sorting_feature_detector": {
+                "widget": "feature_detectors",
+                "label": "Feature detector used for initial matching of both images",
+                "help": "Matcher that will be used to construct image dissimilarity matrix constructed using feature matches. This step is called 'sorting' in VALIS context."
+            },
+            "matching_feature_detector": {
+                "widget": "feature_detectors",
+                "label": "Feature detector used for final matching of both images",
+                "help": "Matcher that will be used to match images after sorting. If set to the same as the sorting feature detector, this step is skipped and the resulting registration from the 'sorting' step is used."
+            },
+            "affine_transformer": {
+                "widget": "affine_transformers",
+                "label": "Transformation function used as metric during registration",
+                "help": "This function is also used for the affine optimizer (if any is selected)."
+            },
+            "affine_optimizer": {
+                "widget": "affine_optimizers",
+                "label": "Method used to refine the intial affine transform",
+                "help": "The default registration generally has a good performance and optimization is rarely needed."
+            },
+            "processing_size": {
+                "widget": "select",
+                "label": "Processing size",
+                "options": [
+                    512,
+                    1024,
+                    2048,
+                    4096,
+                    8196
+                ],
+                "help": "Size at which the registration process is applied. The image is resized to have its largest side equal to the selected processing size. Highest registration performance requires at least `8196` size setting."
+            }
+        },
+        "visible": false
+    },
+    "output_dir": {
+        "widget": "path_selector",
+        "show_hidden": false,
+        "show_files": false
+    },
+    "output_options": {
+        "label": "Output files options",
+        "group": {
+            "temp_dir": {
+                "widget": "path_selector",
+                "show_hidden": false,
+                "show_files": true
+            },
+            "output_codec": {
+                "widget": "select",
+                "label": "Compression codec",
+                "options": [
+                        "jp2k",
+                        "jpeg",
+                        "zstd",
+                        "webp",
+                        "lzw",
+                        "ccittfax4",
+                        "packbits",
+                        "deflate",
+                        "none"
+                ],
+                "help": "Codec used to compress the output .tif image"
+            },
+            "output_codec_quality": {
+                "widget": "number_field",
+                "label": "Compression codec quality",
+                "value": 100,
+                "min": 1,
+                "max": 100,
+                "step": 1,
+                "help": "The quality to be preserver after compressing the image with the selected codec. For loss-less compression set it to 100."
+            }
+        },
+        "visible": false
+    }
+}

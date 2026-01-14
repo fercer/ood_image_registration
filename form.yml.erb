@@ -1,60 +1,146 @@
 <%-
-  require 'json'
-  
-  # 1. Load the JSON file
-  base_json_path = Pathname.new(__dir__).join("form/base_options.json")
-  advanced_json_paths = {
-    "preprocessor" => Pathname.new(__dir__).join("scripts/preprocessors.json"),
-    "reader" => Pathname.new(__dir__).join("scripts/readers.json"),
-    "feature_detector" => Pathname.new(__dir__).join("scripts/feature_detectors.json"),
-    "affine_transformer" => Pathname.new(__dir__).join("scripts/affine_transformers.json"),
-    "affine_optimizer" => Pathname.new(__dir__).join("scripts/affine_optimizers.json")
+require 'json'
+
+# 1. Load the JSON file
+base_json_path = Pathname.new(__dir__).join("form_options.json")
+
+# Default to empty if file is missing (error handling)
+if File.exist?(base_json_path)
+  base_options_data = JSON.parse(File.read(base_json_path))
+else
+  base_options_data = {}
+end
+
+$available_custom_widgets = [
+  "preprocessors",
+  "readers",
+  "feature_detectors",
+  "affine_transformers",
+  "affine_optimizers"
+]
+
+def deep_copy(obj)
+  Marshal.load(Marshal.dump(obj))
+end
+
+def custom_widget(key, props, widget_name)
+  custom_options_data = JSON.parse(File.read(Pathname.new(__dir__).join("scripts/#{widget_name}.json")))
+
+  group_options_data = {
+    "widget" => "select",
+    "label" => props.fetch("label", key),
+    "options" => custom_options_data.keys,
+    "help" => props.fetch("help", ""),
+    "group" => {},
+    "visible" => "false",
+    "add_show_checkbox" => false
   }
 
-  # Default to empty if file is missing (error handling)
-  if File.exist?(base_json_path)
-    base_options_data = JSON.parse(File.read(base_json_path))
-  else
-    base_options_data = {}
-  end
+  custom_options_data.each do |opt, opt_props|
+    if not opt_props["arguments"].empty?
+      group_options_data["group"]["#{key}_#{opt}"] = {
+        "label" => "#{opt}",
+        "group" => {},
+        "visible" => "false"
+      }
+    end
 
-  custom_options_data = {
-    "preprocessor" => {},
-    "reader" => {},
-    "feature_detector" => {},
-    "affine_transformer" => {},
-    "affine_optimizer" => {}
-  }
-  
-  advanced_json_paths.each do |opt, opt_path|
-    if File.exist?(opt_path)
-      custom_options_data[opt] = JSON.parse(File.read(opt_path))
+    opt_props["arguments"].each do |arg_key, arg_widget|
+      group_options_data["group"]["#{key}_#{opt}"]["group"]["#{key}_#{opt}_#{arg_key}"] = arg_widget
     end
   end
 
+  return group_options_data
+end
+
+def add_widget(key, props)
   # OOD prefixes all attributes with this string
   prefix = "batch_connect_session_context_"
+
+  # The hash that stores the widget properties used to populate the form (flat)
+  opt_data = {}
   
-  advanced_args_ids = {}
+  # A hash that stores the variable types used in the script.sh (flat)
+  opt_type = {}
 
-  base_options_data.each do |key, props|
-    if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') || props['widget'].include?('affine_transformer') || props['widget'].include?('affine_optimizer')
-      advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"] = {}
+  # A hash to store the hierarchy of nested options for show/hide functionallity (tree)
+  opt_tree = {}
 
-      custom_options_data[props['widget']].each do |opt, opt_props|
-        advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt] = {
-          "widget_id" => "#{prefix}show_advanced_#{key.gsub('-', '_')}_#{opt.downcase}",
-          "widget_arguments" => {}
-        }
+  if props.key?('widget') and $available_custom_widgets.include?props["widget"]
+    props = custom_widget(key, props, props["widget"])
+  end
 
-        opt_props["arguments"].each do |arg_key, arg_widget|
-          advanced_args_ids["#{prefix}#{key.gsub('-', '_')}"][opt]["widget_arguments"]["#{prefix}#{key.gsub('-', '_')}_#{opt.downcase}_#{arg_key.downcase.gsub('-', '_')}"] = arg_widget['type']
-        end
-      end
+  sub_opt_trees = {}
+
+  ungrouped_props = props
+  if props.key?('group') and props.key?('widget')
+    ungrouped_props = deep_copy(props)
+    ungrouped_props.delete('group')
+    ungrouped_props.delete('visible')
+  end
+
+  # For custom widgets based on dropdown selection
+  if ungrouped_props.key?('widget')
+    opt_data[key.downcase.gsub('-', '_')] = ungrouped_props
+    opt_data[key.downcase.gsub('-', '_')]["cacheable"] = "false"
+    
+    if ungrouped_props.key?('type')
+      opt_type[key.downcase.gsub('-', '_')] = ungrouped_props['type']
+    end
+
+    if props.key?('group') and not props.fetch("add_show_checkbox", true)
+      opt_tree["#{prefix}#{key.downcase.gsub('-', '_')}"] = sub_opt_trees
     end
   end
-  
-  advanced_args_ids = advanced_args_ids.to_json
+
+  if props.key?('group')
+    if props.fetch("add_show_checkbox", true)
+      opt_data["show_advanced_#{key.downcase.gsub('-', '_')}"] = {
+        "widget" => "check_box",
+        "label" => "Show #{props['label']}",
+        "value" => props.fetch('visible', 'false'),
+        "cacheable" => "false"
+      }
+    end
+
+    props['group'].each do |sub_key, sub_props|
+      # Recurse for each sub-widget
+      sub_opt_data, sub_opt_type, sub_opt_tree = add_widget(sub_key, sub_props)
+
+      if sub_opt_tree.empty?
+        sub_opt_tree["#{prefix}#{sub_key.downcase.gsub('-', '_')}"] = {}
+      end
+
+      opt_data.update(sub_opt_data)
+      opt_type.update(sub_opt_type)
+      sub_opt_trees.update(sub_opt_tree)
+    end
+
+    if props.fetch("add_show_checkbox", true)
+      opt_tree["#{prefix}show_advanced_#{key.downcase.gsub('-', '_')}"] = sub_opt_trees
+    else
+      opt_tree["#{prefix}#{key.downcase.gsub('-', '_')}"] = sub_opt_trees
+    end
+  end
+
+  # Base recursion
+  return opt_data, opt_type, opt_tree
+end
+
+options_data = {}
+options_tree = {}
+options_type = {}
+
+base_options_data.each do |key, props|
+  opt_data, opt_type, opt_tree = add_widget(key, props)
+
+  options_data.update(opt_data)
+  options_type.update(opt_type)
+  options_tree.update(opt_tree)
+end
+
+options_tree = options_tree.to_json
+options_type = options_type.to_json
 -%>
 
 # Batch Connect app configuration file
@@ -84,120 +170,38 @@ attributes:
         # - ['test', data-exclusive-option-for-queue-rit-test: true]
     help: "Currently, image registration jobs are limited to the compute partition and batch QOS."
 
-  # 4. Programmatically Generate Base Attributes from JSON
-  <%- base_options_data.each do |key, props| -%>
+  # 4. Programmatically Generate Attributes from JSON
+<%- options_data.each do |key, props| -%>
   <%= key %>:
-  <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') || props['widget'].include?('affine_transformer') || props['widget'].include?('affine_optimizer') -%>
-    widget: select
-    label: "<%= props['label'] %>"
+  <%- props.each do |prop_key, prop_val| -%>
+    <%- if ["label", "help"].include?(prop_key) -%>
+    <%= prop_key %>: "<%= prop_val %>"
+    <%- elsif ["options"].include?(prop_key) -%>
     options:
-    <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
-      - ["<%= opt_props['description'] %> (<%= opt %>)", <%= opt %>]
-    <%- end -%>
-    <%- if props.key?('help') -%>
-    help: "<%= props['help'] %>"
-    <%- end -%>
-  <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
-  
-  #------------------------------------------------------------------------------------------------------- Toggle Checkbox for Advanced Options
-  <%- if not opt_props["arguments"].empty? -%>
-  show_advanced_<%= key %>_<%= opt %>:
-    widget: check_box
-    label: "Show Advanced Options for <%= opt %>"
-    value: 0
-  <%- end -%>
-  #------------------------------------------------------------------------------------------------------- Advanced Options
-  <%- opt_props["arguments"].each do |arg_key, arg_widget| %>
-  <%= key %>_<%= opt %>_<%= arg_key %>:
-    widget: <%= arg_widget['widget'] %>
-    label: "<%= arg_widget['label'] %>"
-    <%- if arg_widget.key?('options') -%>
-    options:
-      <%- arg_widget['options'].each do |opt| %>
+        <%- prop_val.each do |opt| -%>
       - [<%= opt %>]
       <%- end -%>
-    <%- end -%>
-    <%- if arg_widget.key?('value') -%>
-    value: <%= arg_widget['value'] %>
-    <%- end -%>
-    <%- if arg_widget.key?('min') -%>
-    min: <%= arg_widget['min'] %>
-    <%- end -%>
-    <%- if arg_widget.key?('max') -%>
-    max: <%= arg_widget['max'] %>
-    <%- end -%>
-    <%- if arg_widget.key?('step') -%>
-    step: <%= arg_widget['step'] %>
-    <%- end -%>
-    <%- if arg_widget.key?('help') -%>
-    help: "<%= arg_widget['help'] %>"
-    <%- end -%>
-    cacheable: false
-  <%- end -%>
-  <%- end -%>
-  <%- else -%>
-    #----------------------------------------------------------------------------------------------------- Basic Options
-    widget: <%= props['widget'] %>
-    label: "<%= props['label'] %>"
-    <%- if props.key?('options') -%>
-    options:
-      <%- props['options'].each do |opt| %>
-      - [<%= opt %>]
-      <%- end -%>
-    <%- end -%>
-    <%- if props.key?('value') -%>
-    value: <%= props['value'] %>
-    <%- end -%>
-    <%- if props.key?('min') -%>
-    min: <%= props['min'] %>
-    <%- end -%>
-    <%- if props.key?('max') -%>
-    max: <%= props['max'] %>
-    <%- end -%>
-    <%- if props.key?('step') -%>
-    step: <%= props['step'] %>
-    <%- end -%>
-    <%- if props.key?('checked_value') -%>
-    checked_value: <%= props['checked_value'] %>
-    <%- end -%>
-    <%- if props.key?('unchecked_value') -%>
-    unchecked_value: <%= props['unchecked_value'] %>
-    <%- end -%>
-    <%- if props.key?('show_hidden') -%>
-    show_hidden: <%= props['show_hidden'] %>
-    <%- end -%>
-    <%- if props.key?('show_files') -%>
-    show_files: <%= props['show_files'] %>
-    <%- end -%>
-    <%- if props.key?('help') -%>
-    help: "<%= props['help'] %>"
-    <%- end -%>
-    <%- if props.key?('required') -%>
-    required: <%= props['required'] %>
-    <%- end -%>
-    cacheable: false
+    <%- else -%>
+    <%= prop_key %>: <%= prop_val %>
     <%- end -%>
   <%- end -%>
-  json_bridge:
+<%- end -%>
+  json_bridge_tree:
     widget: "hidden_field"
-    value: '<%= advanced_args_ids %>'
+    value: '<%= options_tree %>'
+    cacheable: false
+
+  json_bridge_type:
+    widget: "hidden_field"
+    value: '<%= options_type %>'
     cacheable: false
 
 form:
  - modules
  - partition
  - custom_qos
-<%- base_options_data.each do |key, props| -%>
+<%- options_data.each do |key, props| -%>
  - <%= key %>
- <%- if props['widget'].include?('preprocessor') || props['widget'].include?('reader') || props['widget'].include?('feature_detector') || props['widget'].include?('affine_transformer') || props['widget'].include?('affine_optimizer') -%>
- <%- custom_options_data[props['widget']].each do |opt, opt_props| %>
- <%- if not opt_props["arguments"].empty? -%>
- - show_advanced_<%= key %>_<%= opt %>
- <%- end -%>
- <%- opt_props["arguments"].each do |arg_key, arg_widget| %>
- - <%= key %>_<%= opt %>_<%= arg_key %>
- <%- end -%>
- <%- end -%>
- <%- end -%>
 <%- end -%>
- - json_bridge
+ - json_bridge_tree
+ - json_bridge_type

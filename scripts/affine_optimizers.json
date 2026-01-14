@@ -26,7 +26,8 @@
             },
             "optimization": {
                 "widget": "select",
-                "label": "Optimization method. Can be any method from `scipy.optimize`",
+                "label": "Optimization method",
+                "help": "Can be any method from `scipy.optimize`.",
                 "options": [
                     "Powell",
                     "Nelder-Mead",
