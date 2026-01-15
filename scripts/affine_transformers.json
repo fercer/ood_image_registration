@@ -1,0 +1,10 @@
+{
+    "EuclideanTransform": {
+        "description": "Euclidean transformation, also known as a rigid transform.",
+        "arguments": {}
+    },
+    "SimilarityTransform": {
+        "description": "The similarity transformation extends the Euclidean transformation with a single scaling factor in addition to the rotation and translation parameters.",
+        "arguments": {}
+    }
+}

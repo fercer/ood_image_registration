@@ -8,6 +8,8 @@ from valis import registration
 from valis.feature_matcher import Matcher
 from valis.feature_detectors import VggFD
 
+import torch
+
 import utils
 
 
@@ -35,7 +37,14 @@ def init_registrar(
         reference_image,
         input_image,
         metric_type="distance",
-        matcher_cls="default",
+        create_masks=True,
+        affine_transformer="EuclideanTransform",
+        affine_optimizer=None,
+        affine_optimizer_kwargs=None,
+        sorting_feature_detector="DiskFD",
+        sorting_feature_detector_kwargs=None,
+        matching_feature_detector="VggFD",
+        matching_feature_detector_kwargs=None,
         non_rigid_registrar_cls=None,
         non_rigid_reg_params=None,
         max_processed_image_dim_px=registration.DEFAULT_THUMBNAIL_SIZE,
@@ -49,16 +58,28 @@ def init_registrar(
     :param input_image: Image to register towards the reference image.
     :param non_rigid: Whether apply non-rigid registration or not.
     :param metric_type: String describing what the custom metric function returns, e.g. 'similarity' or 'distance'.
-    :param matcher_cls: Matcher used to identify features in both images for registration.
+    :param create_masks: Whether to create a tissue mask from the images to restrict ther regions from where the features are extracted.
+    "param affine_transformer: Tranformer function used to calculate the affine transform to align the images.
+    "param affine_optimizer: Optimizer method used to refine the affine transform.
+    "param affine_optimizer_kwargs: Arguments passed to the affine optimization class.
+    :param sorting_feature_detector: Feature detector used for initial rigid registration.
+    :param sorting_feature_detector_kwargs: Sorting feature detector keyword arguments.
+    :param matching_feature_detector: Feature detector used for final rigid registration.
+    :param matching_feature_detector_kwargs: Matching feature detector keyword arguments.
     :param non_rigid_registrar_cls: Uninstantiated NonRigidRegistrar class that will be used by `non_rigid_registrar` to calculate the deformation fields between images.
     :param max_processed_image_dim_px: Maximum width or height of processed images.
     :param max_non_rigid_registration_dim_px: Maximum width or height of images used for non-rigid registration.
     """
-    if matcher_cls is not None and matcher_cls == "Vgg":
-        matcher = Matcher(feature_detector=VggFD(),
-                          metric_type=metric_type)
+
+    # Define the matcher corresponding to the selected feature detector
+    matcher = utils.get_matcher(matching_feature_detector, matching_feature_detector_kwargs, metric_type)
+    if sorting_feature_detector is None:
+        matcher_for_sorting = matcher
     else:
-        matcher = registration.DEFAULT_MATCHER
+        matcher_for_sorting = utils.get_matcher(sorting_feature_detector, sorting_feature_detector_kwargs, metric_type)
+
+    transformer = utils.get_transform(affine_transformer)
+    optimizer = utils.get_optimizer(affine_optimizer, affine_optimizer_kwargs)
 
     # Create a Valis object and use it to register the slides inside
     # the slide_src_dir directory
@@ -67,10 +88,13 @@ def init_registrar(
         results_dst_dir,
         img_list=[reference_image, input_image],
         reference_img_f=reference_image,
-        align_to_reference=reference_image is not None,
+        align_to_reference=True,
+        imgs_ordered=True,
+        create_masks=create_masks,
+        transformer_cls=transformer,
+        affine_optimizer_cls=optimizer,
         matcher=matcher,
-        matcher_for_sorting=Matcher(feature_detector=VggFD(),
-                                    metric_type=metric_type),
+        matcher_for_sorting=matcher_for_sorting,
         non_rigid_registrar_cls=non_rigid_registrar_cls,
         non_rigid_reg_params=non_rigid_reg_params,
         max_processed_image_dim_px=max_processed_image_dim_px,
@@ -110,8 +134,7 @@ def run_registration(
                       input_image_reader_kwargs]
     }
 
-    _ = registrar.register(processor_dict=processor_dict,
-                           reader_dict=reader_dict)
+    _ = registrar.register(processor_dict=processor_dict, reader_dict=reader_dict)
 
     if micro:
         registrar.register_micro(
@@ -168,7 +191,7 @@ def save_outputs(
 
 if __name__ == "__main__":
     base_parser = utils.basic_arguments()
-    args = utils.preprocessors_arguments(base_parser)
+    args = utils.advanced_arguments(base_parser)
 
     (non_rigid_registrar_cls,
      non_rigid_reg_params) = init_non_rigid_parameters(
@@ -184,8 +207,15 @@ if __name__ == "__main__":
             args.results_dst_dir,
             args.reference_image,
             args.input_image,
+            create_masks=args.create_masks,
             metric_type=args.metric_type,
-            matcher_cls=args.matcher_cls,
+            affine_optimizer=args.affine_optimizer,
+            affine_optimizer_kwargs=args.affine_optimizer_kwargs,
+            affine_transformer=args.affine_transformer,
+            sorting_feature_detector=args.sorting_feature_detector,
+            sorting_feature_detector_kwargs=args.sorting_feature_detector_kwargs,
+            matching_feature_detector=args.matching_feature_detector,
+            matching_feature_detector_kwargs=args.matching_feature_detector_kwargs,
             non_rigid_registrar_cls=non_rigid_registrar_cls,
             non_rigid_reg_params=non_rigid_reg_params,
             max_processed_image_dim_px=args.max_processed_image_dim_px,

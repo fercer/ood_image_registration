@@ -1,0 +1,62 @@
+{
+    "DiskFD": {
+        "description": "DISK feature detector and descriptor, implemented in Kornia.",
+        "arguments": {
+            "num_features": {
+                "widget": "number_field",
+                "label": "Number of detected features",
+                "value": 7500,
+                "min": 1,
+                "step": 1,
+                "type": "int",
+                "help": "Default value is `7500`."
+            }
+        }
+    },
+    "DeDoDeFD": {
+        "description": "DeDoDe feature detector and descriptor, implemented in Kornia.",
+        "arguments": {
+            "num_features": {
+                "widget": "number_field",
+                "label": "Number of detected features",
+                "value": 7500,
+                "min": 1,
+                "step": 1,
+                "type": "int",
+                "help": "Default value is `7500`."
+            }
+        }
+    },
+    "BriskFD": {
+        "description": "BRISK for feature detection and description.",
+        "arguments": {}
+    },
+    "KazeFD": {
+        "description": "KAZE for feature detection and description.",
+        "arguments": {}
+    },
+    "AkazeFD": {
+        "description": "AKAZE for feature detection and description.",
+        "arguments": {}
+    },
+    "DaisyFD": {
+        "description": "BRISK for feature detection and DAISY for feature description.",
+        "arguments": {}
+    },
+    "LatchFD": {
+        "description": "BRISK for feature detection and LATCH for feature description.",
+        "arguments": {}
+    },
+    "BoostFD": {
+        "description": "BRISK for feature detection and Boost for feature description.",
+        "arguments": {}
+    },
+    "VggFD": {
+        "description": "BRISK for feature detection and VGG for feature description.",
+        "arguments": {}
+    },
+    "OrbVggFD": {
+        "description": "ORB for feature detection and VGG for feature description.",
+        "arguments": {}
+    }
+}

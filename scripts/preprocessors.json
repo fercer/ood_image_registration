@@ -151,7 +151,7 @@
                 "value": 240,
                 "min": 1,
                 "step": 1,
-                "help": "The default value is 240",
+                "help": "The default value is `240`",
                 "type": "int"
             },
             "alpha": {

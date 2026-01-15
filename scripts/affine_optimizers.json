@@ -1,0 +1,52 @@
+{
+    "None": {
+        "description": "Do not optimize affine transform.",
+        "arguments": {}
+    },
+    "AffineOptimizer": {
+        "description": "Execute an optimization method from `scipy.optimize`.",
+        "arguments": {
+            "nlevels": {
+                "widget": "number_field",
+                "label": "Number of levels in the Gaussian pyramid",
+                "value": 1,
+                "min": 1,
+                "step": 1,
+                "help": "The default value is `1`",
+                "type": "int"
+            },
+            "nbins": {
+                "widget": "number_field",
+                "label": "Number of bins to have in histograms used to estimate mutual information",
+                "value": 256,
+                "min": 1,
+                "step": 1,
+                "help": "The default value is `256`",
+                "type": "int"
+            },
+            "optimization": {
+                "widget": "select",
+                "label": "Optimization method",
+                "help": "Can be any method from `scipy.optimize`.",
+                "options": [
+                    "Powell",
+                    "Nelder-Mead",
+                    "CG",
+                    "BFGS",
+                    "Newton-CG",
+                    "L-BFGS-B",
+                    "TNC",
+                    "COBYLA",
+                    "COBYQA",
+                    "SLSQP",
+                    "trust-constr",
+                    "dogleg",
+                    "trust-ncg",
+                    "trust-krylov",
+                    "trust-exact"
+                ],
+                "type": "str"
+            }
+        }
+    }
+}

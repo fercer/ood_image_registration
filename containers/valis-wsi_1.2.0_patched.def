@@ -11,9 +11,18 @@ from: cdgatenbee/valis-wsi:1.2.0
 
     # Patch the feature_detectors.py and feature_matcher.py files according to https://github.com/MathOnco/valis/issues/208#issuecomment-3208212972
     sed -i 's/.numpy()/.cpu().numpy()/g' valis/feature_detectors.py
+    sed -i '537c\    def _detect_and_compute(self, img, *args, **kwargs):' valis/feature_detectors.py
+
     sed -i 's/.numpy()/.cpu().numpy()/g' valis/feature_matcher.py
     sed -i '2157a\        else:' valis/registration.py
     sed -i '2158a\            self.non_rigid_reg_kwargs = {}' valis/registration.py
+    sed -i '2202c\            afo = affine_optimizer(transformation=transformer.__name__)' valis/registration.py
+
+    # Patch also some bugs in affine_optimizer.py
+    sed -i '429c\    return MI' valis/affine_optimizer.py
+    sed -i '686c\                cst = np.float32(res.fun)' valis/affine_optimizer.py
+    sed -i '757c\                 optimization="AdaptiveStochasticGradientDescent", transformation="EuclideanTransform"):' valis/affine_optimizer.py
+    sed -i '758c\        super().__init__(nlevels, nbins, optimization, transformation)' valis/affine_optimizer.py
 
     /root/.local/bin/pip3 uninstall valis-wsi -y
     /root/.local/bin/pip3 install /opt/valis
@@ -22,9 +31,12 @@ from: cdgatenbee/valis-wsi:1.2.0
     # Clone this repository and get access to the VALIS registration script
     cd /opt
     git clone https://github.com/fercer/ood_image_registration
-    cp ood_image_registration/scripts/*.py /opt
-    cp ood_image_registration/scripts/*.json /opt
+
+    # Copy the source code to execute the image registration
+    mkdir /opt/scripts
+    cp ood_image_registration/scripts/*.py /opt/scripts
+    cp ood_image_registration/scripts/*.json /opt/scripts
     rm -r ood_image_registration
 
 %runscript
-    /root/.local/bin/python /opt/valis_registration.py $@
+    /root/.local/bin/python /opt/scripts/valis_registration.py $@
