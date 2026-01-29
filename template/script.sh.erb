@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+OOD_OUTPUT_DIR="$(pwd)"
+
 # Set working directory to home directory
 cd "${HOME}"
 
@@ -183,3 +185,5 @@ echo "$command"
 eval "$command"
 
 echo "TIMING - Finished Image Registration at: $(date)"
+
+cp ${TEMP_DIR}/${REFERENCE_BASENAME}/overlaps/*rigid_overlap.png ${OOD_OUTPUT_DIR}/registration_thumbnail.png
