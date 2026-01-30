@@ -6,7 +6,7 @@
     "BioFormatsSlideReaderZ":{
         "description": "Read slides using BioFormats at a specific Z slice",
         "arguments": {
-            "z": {
+            "z_slice": {
                 "widget": "number_field",
                 "label": "Select a Z slice index",
                 "value": 0,
